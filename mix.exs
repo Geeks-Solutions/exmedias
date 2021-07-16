@@ -47,7 +47,7 @@ defmodule Media.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.5.7"},
+      {:phoenix, "~> 1.5.9"},
       {:phoenix_ecto, "~> 4.2"},
       {:ecto_sql, "~> 3.6"},
       {:postgrex, ">= 0.0.0"},
@@ -61,13 +61,14 @@ defmodule Media.MixProject do
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
       {:sweet_xml, ">= 0.0.0"},
-      {:elixir_xml_to_map, "~> 0.1"},
+      {:elixir_xml_to_map, "~> 2.0.0"},
       {:elixir_uuid, "~> 1.2.1"},
       {:ex_aws_sts, "~> 2.0"},
       {:hackney, "~> 1.9"},
-      {:sigaws, "~> 0.7"},
+      {:sigaws,
+       git: "https://github.com/nulib/sigaws", ref: "0a754168d7f6f2f8a7bda3b8c6c2a53c0d0139a5"},
       {:httpoison, "~> 1.8", override: true},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 4.0.1"},
       {:morphix, "~> 0.8.0"},
       {:mongodb, "~> 0.5.1"},
       {:thumbnex, "~> 0.3.4"},

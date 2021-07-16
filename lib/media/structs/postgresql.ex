@@ -225,7 +225,7 @@ defmodule Media.PostgreSQL do
         on: true
       )
       |> join(:inner, [m, f], p in Media.Platforms.Platform,
-        on: fragment("? = (? -> 'platform_id')::TEXT::BIGINT", p.id, f)
+        on: fragment("? = (? ->> 'platform_id')::BIGINT", p.id, f)
       )
       |> join(:left, [m], c in "medias_contents", on: m.id == c.media_id)
       |> select([m, f, p, c], %{
@@ -347,7 +347,7 @@ defmodule Media.PostgreSQL do
           on: true
         )
         |> select([m, f], %{
-          platform_id: fragment("(? -> 'platform_id')::text::bigint", f),
+          platform_id: fragment("(? ->> 'platform_id')::bigint", f),
           number_of_medias: fragment("coalesce(COUNT(?), 0)", f)
         })
         |> group_by([_], fragment("platform_id"))
@@ -390,7 +390,7 @@ defmodule Media.PostgreSQL do
           select: m,
           where:
             fragment(
-              "exists (select * from JSON_ARRAY_ELEMENTS(ARRAY_TO_JSON(?)) as a where (a -> 'platform_id')::text::bigint = ?)",
+              "exists (select * from JSON_ARRAY_ELEMENTS(ARRAY_TO_JSON(?)) as a where (a ->> 'platform_id')::bigint = ?)",
               m.files,
               ^id
             )
@@ -440,5 +440,3 @@ defmodule Media.PostgreSQL do
     end
   end
 end
-
-# from(m in MediaSchema, where: m.id == ^id) |> join(:inner_lateral, [m], f in fragment("JSON_ARRAY_ELEMENTS(ARRAY_TO_JSON(?))", m.files),on: true) |> join(:inner,[m,f], p in Media.Platforms.Platform, on: fragment("? = (? -> 'platform_id')::TEXT::BIGINT", p.id, f))|>select([m, f,p], %{media: m,files: fragment("JSONB_AGG(JSONB_BUILD_OBJECT('platform', ?, 'file', ?))", p, f)})|> group_by([m], m.id)|> Blogs.Repo.one()

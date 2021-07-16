@@ -47,7 +47,7 @@ defmodule Media.FiltersMongoDB do
   def add_sort(query, sort) when sort == %{}, do: query
 
   def add_sort(query, sort) do
-    [field | tail] = sort |> Map.keys()
+    [field | _tail] = sort |> Map.keys()
     direction = sort[field]
     field = field |> String.to_atom()
 

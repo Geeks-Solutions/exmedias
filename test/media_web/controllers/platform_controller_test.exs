@@ -296,7 +296,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn, :get_platform, id)
       )
 
-    assert response = json_response(conn, 404)
+    assert json_response(conn, 404)
   end
 
   def test_delete_platform do
@@ -384,7 +384,7 @@ defmodule MediaWeb.PlatformControllerTest do
     assert resp = json_response(conn, 200)
     id = resp["id"]
     assert @valid_attrs |> Map.put("id", id) |> Map.put("number_of_medias", 0) == resp
-    assert resp = json_response(conn, 200)
+    assert json_response(conn, 200)
 
     conn1 = build_conn()
 
@@ -395,7 +395,7 @@ defmodule MediaWeb.PlatformControllerTest do
         @invalid_attrs
       )
 
-    assert response = json_response(conn1, 422)
+    assert json_response(conn1, 422)
   end
 
   def test_platforms_filtered do

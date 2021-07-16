@@ -544,7 +544,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn2, :delete_media, id)
       )
 
-    assert %{"error" => error} = json_response(conn2, 400)
+    assert %{"error" => _error} = json_response(conn2, 400)
     conn3 = build_conn()
 
     conn3 =
@@ -579,7 +579,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn2, :delete_media, id)
       )
 
-    assert response = json_response(conn2, 200)
+    assert json_response(conn2, 200)
     conn3 = build_conn()
 
     conn3 =
