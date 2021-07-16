@@ -465,7 +465,7 @@ defmodule Media.Helpers do
     case files_transaction(new_files, old_ids, %{privacy: privacy, type: type}) do
       {:ok, []} ->
         # if no new files are provided
-        # then we don't want to update them so we keep the olf files intact
+        # then we don't want to update them so we keep the old files intact
         {changeset, attrs |> Map.put(:files, old_files)}
 
       {:ok, result} ->
