@@ -463,6 +463,11 @@ defmodule Media.Helpers do
     old_ids = old_files |> Enum.map(&Map.get(&1, :file_id))
 
     case files_transaction(new_files, old_ids, %{privacy: privacy, type: type}) do
+      {:ok, []} ->
+        # if no new files are provided
+        # then we don't want to update them so we keep the olf files intact
+        {changeset, attrs |> Map.put(:files, old_files)}
+
       {:ok, result} ->
         ## get new files and their ids
         new_files = result |> Enum.map(fn file -> file end)
@@ -484,7 +489,7 @@ defmodule Media.Helpers do
         {changeset, attrs}
 
       {:error, error} ->
-        {changeset |> add_error(:files, error), attrs |> Map.put(:files, [])}
+        {changeset |> add_error(:files, error), attrs |> Map.delete(:files)}
     end
 
     ## Check which files are removed
@@ -536,17 +541,17 @@ defmodule Media.Helpers do
         end)
   end
 
-  def files_transaction(new_files, old_ids, %{type: type, privacy: privacy}) do
+  def files_transaction(new_files, _old_ids, %{type: type, privacy: privacy}) do
     Enum.reduce(new_files, {[], [], true, ""}, fn
-      _file, {files, changes, false, error} = acc ->
+      _file, {files, changes, false, error} ->
         {files, changes, false, error}
 
-      file, {files, changes, true, error} ->
+      file, {files, changes, true, _error} ->
         case upload_file(file, type, privacy) do
           {:ok, new_file, new_changes} ->
             {files ++ [new_file], changes ++ new_changes, true, ""}
 
-          {:error, error, new_changes} ->
+          {:error, error, _new_changes} ->
             rollback_changes(changes)
             {files, changes, false, error}
         end
@@ -555,14 +560,18 @@ defmodule Media.Helpers do
       {_files, _changes, false, error} ->
         {:error, "Something went wrong when uploading your files. Reason: #{error}"}
 
-      {files, changes, true, _error} ->
+      {files, _changes, true, _error} ->
         {:ok, files}
     end
   end
 
   def upload_file(%{file_id: _file_id} = file, _type, _privacy), do: {:ok, file, []}
 
-  def upload_file(%{file: %Plug.Upload{path: path} = file} = new_file, "image", privacy) do
+  def upload_file(
+        %{file: %Plug.Upload{path: path, content_type: "image/" <> _imagetype} = file} = new_file,
+        "image",
+        privacy
+      ) do
     with {:ok, %{size: size}} <- File.stat(path),
          {:ok, %{bucket: _bucket, filename: filename, id: file_id, url: url} = base_file} <-
            S3Manager.upload_file(file.filename, file.path),
@@ -596,7 +605,10 @@ defmodule Media.Helpers do
   end
 
   def upload_file(_, _, _privacy),
-    do: {:error, "The file structure you provided is not supported", []}
+    do:
+      {:error,
+       "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL.",
+       []}
 
   def youtube_endpoint do
     "https://www.googleapis.com/youtube/v3"
@@ -670,7 +682,8 @@ defmodule Media.Helpers do
     video_file = extract_param(file, :file)
     url = extract_param(video_file, :url)
 
-    with {:ok, %{"id" => video_id}} <- get_youtube_id(url),
+    with true <- is_binary(url),
+         {:ok, %{"id" => video_id}} <- get_youtube_id(url),
          %{"items" => items} <-
            __MODULE__.youtube_video_details(url) do
       thumbnail_url = "https://img.youtube.com/vi/#{video_id}/default.jpg"
@@ -696,6 +709,9 @@ defmodule Media.Helpers do
        })
        |> Map.delete(:file), []}
     else
+      false ->
+        {:error, "Please provide a valid video url", []}
+
       {:error, :not_youtube_url} ->
         {:error, "This video is not a youtube video", []}
 
@@ -731,10 +747,10 @@ defmodule Media.Helpers do
     Map.put(media, :files, files |> Enum.map(&add_privacy_data(&1)))
   end
 
-  def add_privacy_data(%{file_id: id, filename: filename} = file) do
+  def add_privacy_data(%{file_id: _id, filename: filename} = file) do
     ## get the headers and updated url for private files
     private_data =
-      S3Manager.get_temporary_aws_credentials(id)
+      S3Manager.get_temporary_aws_credentials("#{UUID.uuid4(:hex) |> String.slice(0..12)}")
       |> S3Manager.read_private_object("#{Helpers.aws_bucket_name()}/#{filename}")
 
     Map.merge(file, private_data)
@@ -758,6 +774,7 @@ defmodule Media.Helpers do
   false otherwise
   """
   def test_mode? do
-    System.get_env("MEDIA_TEST") != "test" or (System.get_env("MEDIA_TEST") == "test" && Helpers.env(:test_mode, "real") == "real")
+    System.get_env("MEDIA_TEST") != "test" or
+      (System.get_env("MEDIA_TEST") == "test" && Helpers.env(:test_mode, "real") == "real")
   end
 end

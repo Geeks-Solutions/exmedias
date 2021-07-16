@@ -208,7 +208,7 @@ defmodule MediaWeb.MediaController do
   ```
   """
 
-  def insert_media(conn, %{"files" => files} = args) do
+  def insert_media(conn, %{"files" => _files} = args) do
     args = parse_form_data(args)
 
     case Context.insert_media(args |> Helpers.atomize_keys()) do
@@ -292,7 +292,7 @@ defmodule MediaWeb.MediaController do
 
   The files update is complete so any old files that will be missing in the payload will be deleted. Only the files that are sent will be reachable.
   """
-  def update_media(conn, %{"id" => id} = args) do
+  def update_media(conn, %{"id" => _id} = args) do
     args = parse_form_data(args)
 
     case Context.update_media(args |> Helpers.atomize_keys()) do

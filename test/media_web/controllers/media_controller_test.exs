@@ -461,7 +461,7 @@ defmodule MediaWeb.MediaControllerTest do
                  "platform_id" => _1610,
                  "size" => _13900,
                  "type" => "image/png",
-                 "thumbnail_url" => thumbnail_url,
+                 "thumbnail_url" => _thumbnail_url,
                  "url" => url
                } = file
              ],
@@ -497,7 +497,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn, :get_media, id)
       )
 
-    assert response = json_response(conn, 404)
+    assert json_response(conn, 404)
   end
 
   def test_delete_media_used do
@@ -544,7 +544,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn2, :delete_media, id)
       )
 
-    assert %{"error" => error} = json_response(conn2, 400)
+    assert %{"error" => _error} = json_response(conn2, 400)
     conn3 = build_conn()
 
     conn3 =
@@ -579,7 +579,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn2, :delete_media, id)
       )
 
-    assert response = json_response(conn2, 200)
+    assert json_response(conn2, 200)
     conn3 = build_conn()
 
     conn3 =
@@ -588,7 +588,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn3, :get_media, id)
       )
 
-    assert response = json_response(conn3, 404)
+    assert json_response(conn3, 404)
   end
 
   def test_delete_nonexisting_media(id) do
@@ -600,7 +600,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn, :delete_media, id)
       )
 
-    assert response = json_response(conn, 404)
+    assert json_response(conn, 404)
   end
 
   def test_delete_invalid_id do
@@ -612,7 +612,7 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn, :delete_media, "invalid id")
       )
 
-    assert response = json_response(conn, 400)
+    assert json_response(conn, 400)
   end
 
   ## This tests the updates without changing the files
@@ -722,7 +722,7 @@ defmodule MediaWeb.MediaControllerTest do
            |> Map.put("id", id)
            |> Map.put("number_of_contents", 0) == resp
 
-    assert resp = json_response(conn, 200)
+    assert json_response(conn, 200)
 
     conn1 = build_conn()
 
@@ -734,7 +734,7 @@ defmodule MediaWeb.MediaControllerTest do
         |> Map.put("id", id)
       )
 
-    assert response = json_response(conn1, 422)
+    assert json_response(conn1, 422)
   end
 
   def test_medias_filtered do
@@ -815,7 +815,7 @@ defmodule MediaWeb.MediaControllerTest do
 
   def test_list_medias do
     conn = create_media()
-    assert media = json_response(conn, 200)
+    assert json_response(conn, 200)
 
     conn = list_medias()
 

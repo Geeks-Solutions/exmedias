@@ -36,7 +36,7 @@ defmodule Media.Schema.File do
     ## can be the s3_id, youtube_video_id etc..
     field(:file_id, :string)
     field(:thumbnail_url, :string)
-    belongs_to :platform, Platform, on_replace: :delete
+    belongs_to :platform, Platform, on_replace: :update
   end
 
   def changeset(file, attrs) do

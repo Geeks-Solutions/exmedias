@@ -209,11 +209,12 @@ defmodule Media.S3Manager do
     end
   end
 
-  @doc """
+  """
   This function toggles the object privacy.
   It takes the object key as a first argument and the new privacy status as a second argument
   The object key is the object filename.
   """
+
   @doc false
   def change_object_privacy(object_key, "public") do
     change_privacy(object_key, :public_read)

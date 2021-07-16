@@ -251,7 +251,7 @@ defmodule MediaWeb.PlatformControllerTest do
   def test_invalid_platform_creation do
     conn = create_platform(@invalid_attrs)
 
-    assert response = json_response(conn, 422)
+    assert json_response(conn, 422)
   end
 
   def test_create_valid_platform do
@@ -266,7 +266,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn, :get_platform, resp["id"])
       )
 
-    assert response = json_response(conn, 200)
+    assert json_response(conn, 200)
   end
 
   def test_get_platform do
@@ -296,7 +296,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn, :get_platform, id)
       )
 
-    assert response = json_response(conn, 404)
+    assert json_response(conn, 404)
   end
 
   def test_delete_platform do
@@ -323,7 +323,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn2, :delete_platform, id)
       )
 
-    assert response = json_response(conn2, 200)
+    assert json_response(conn2, 200)
     conn3 = build_conn()
 
     conn3 =
@@ -332,7 +332,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn3, :get_platform, id)
       )
 
-    assert response = json_response(conn3, 404)
+    assert json_response(conn3, 404)
   end
 
   def test_delete_nonexisting_platform(id) do
@@ -344,7 +344,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn, :delete_platform, id)
       )
 
-    assert response = json_response(conn, 404)
+    assert json_response(conn, 404)
   end
 
   def test_delete_invalid_id do
@@ -356,7 +356,7 @@ defmodule MediaWeb.PlatformControllerTest do
         TestHelpers.routes().media_path(conn, :delete_platform, "invalid id")
       )
 
-    assert response = json_response(conn, 400)
+    assert json_response(conn, 400)
   end
 
   def test_update_platform do
@@ -384,7 +384,7 @@ defmodule MediaWeb.PlatformControllerTest do
     assert resp = json_response(conn, 200)
     id = resp["id"]
     assert @valid_attrs |> Map.put("id", id) |> Map.put("number_of_medias", 0) == resp
-    assert resp = json_response(conn, 200)
+    assert json_response(conn, 200)
 
     conn1 = build_conn()
 
@@ -395,7 +395,7 @@ defmodule MediaWeb.PlatformControllerTest do
         @invalid_attrs
       )
 
-    assert response = json_response(conn1, 422)
+    assert json_response(conn1, 422)
   end
 
   def test_platforms_filtered do
@@ -481,7 +481,7 @@ defmodule MediaWeb.PlatformControllerTest do
       list_platforms(~s'{"filters": [{"key": "number_of_medias", "value": 4, "operation": "<"}]}')
 
     assert %{
-             "result" => args,
+             "result" => _args,
              "total" => 2
            } = json_response(conn, 200)
 
