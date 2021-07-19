@@ -58,6 +58,29 @@ defmodule Media.S3Manager do
   """
   alias ExAws.{S3, S3.Upload, STS}
   alias Media.Helpers
+  # Helper functions to read the binary to determine the image extension
+  defp image_extension(<<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>), do: ".png"
+  defp image_extension(<<0xFF, 0xD8, _::binary>>), do: ".jpg"
+
+  defp image_extension(_), do: ""
+
+  def get_base64_info(file) do
+    size = String.length(file)
+
+    filename =
+      file
+      |> Base.decode64!()
+      |> fetch_extension()
+      |> unique_filename()
+
+    %{filename: filename, size: size}
+  end
+
+  defp fetch_extension(file) do
+    file
+    |> image_extension()
+  end
+
   @doc false
   def upload_file(filename, path) do
     ext =
@@ -117,7 +140,17 @@ defmodule Media.S3Manager do
             }
           } = aws.body |> XmlToMap.naive_map()
 
-          {:ok, %{id: id, filename: name, url: url, bucket: bucket}}
+          ## the random string was added to the ETag
+          ## because the ETag is the hash of the object
+          ## so in case we upload two files on the same media we will have the same ETag
+          #  thus adding a random string at the end would be enough
+          {:ok,
+           %{
+             id: id <> String.slice(UUID.uuid4(:hex), 1..5),
+             filename: name,
+             url: url,
+             bucket: bucket
+           }}
 
         _ ->
           {:error, "Unable to upload file to amazon"}

@@ -565,24 +565,68 @@ defmodule Media.Helpers do
     end
   end
 
+  def convert_base64_to_file(base64_file) when is_binary(base64_file) do
+    case base64_file
+         |> Base.decode64() do
+      {:ok, file_binary} ->
+        %{size: _size, filename: filename} = S3Manager.get_base64_info(base64_file)
+
+        {:ok, temp_dir} = Temp.mkdir("temp_dir")
+        temp_path = temp_dir <> filename
+        File.write(temp_path, file_binary)
+        {:ok, %{path: temp_path, filename: filename, content_type: MIME.from_path(temp_path)}}
+
+      _ ->
+        {:error, "Invalid binary file"}
+    end
+  end
+
+  def convert_base64_to_file(_base64_file),
+    do: {:error, "The file sent is not a base64 file"}
+
   def upload_file(%{file_id: _file_id} = file, _type, _privacy), do: {:ok, file, []}
 
+  ## base64_file should be a string
   def upload_file(
-        %{file: %Plug.Upload{path: path, content_type: "image/" <> _imagetype} = file} = new_file,
+        %{base64: true, file: base64_file} = file,
         "image",
         privacy
       ) do
+    case convert_base64_to_file(base64_file) do
+      {:ok, converted_file} ->
+        upload_image(file |> Map.put(:file, converted_file) |> Map.delete(:base64), privacy)
+
+      {:error, error} ->
+        {:error, error, []}
+    end
+  end
+
+  def upload_file(
+        %{file: %Plug.Upload{path: _path, content_type: "image/" <> _imagetype} = _file} =
+          new_file,
+        "image",
+        privacy
+      ) do
+    upload_image(new_file, privacy)
+  end
+
+  def upload_file(%{file: %{url: _url}} = file, "video", _privacy) do
+    handle_youtube_video(file)
+  end
+
+  def upload_image(%{file: %{path: path} = file} = new_file, privacy) do
     with {:ok, %{size: size}} <- File.stat(path),
          {:ok, %{bucket: _bucket, filename: filename, id: file_id, url: url} = base_file} <-
            S3Manager.upload_file(file.filename, file.path),
-         {:ok, _} <-
-           S3Manager.change_object_privacy(filename, privacy),
+         {_file, {:ok, _}} <-
+           {[base_file], S3Manager.change_object_privacy(filename, privacy)},
          ## create a temp directory that will get cleaned up at the end of this request
          tmp_path <- create_thumbnail(file.path),
          {_basefile, {:ok, %{filename: thumbnail_filename, url: thumbnail_url} = thumbnail_file}} <-
-           {base_file, S3Manager.upload_thumbnail(filename, tmp_path)},
-         {:ok, _} <-
-           S3Manager.change_object_privacy(thumbnail_filename, privacy) do
+           {[base_file], S3Manager.upload_thumbnail(filename, tmp_path)},
+         {_files, {:ok, _}} <-
+           {[base_file] ++ [thumbnail_file],
+            S3Manager.change_object_privacy(thumbnail_filename, privacy)} do
       {:ok,
        new_file
        |> Map.delete(:file)
@@ -595,13 +639,9 @@ defmodule Media.Helpers do
          size: size
        }), [base_file, thumbnail_file]}
     else
-      {file, {:error, error}} -> {:error, error, [file]}
+      {files, {:error, error}} -> {:error, error, files}
       {:error, err} -> {:error, err, []}
     end
-  end
-
-  def upload_file(%{file: %{url: _url}} = file, "video", _privacy) do
-    handle_youtube_video(file)
   end
 
   def upload_file(_, _, _privacy),
