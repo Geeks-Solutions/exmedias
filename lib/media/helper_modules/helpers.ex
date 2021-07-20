@@ -569,7 +569,7 @@ defmodule Media.Helpers do
     case base64_file
          |> Base.decode64() do
       {:ok, file_binary} ->
-        %{size: _size, filename: filename} = S3Manager.get_base64_info(base64_file)
+        %{size: _size, filename: filename} = Helpers.get_base64_info(base64_file)
 
         {:ok, temp_dir} = Temp.mkdir("temp_dir")
         temp_path = temp_dir <> filename
@@ -806,6 +806,33 @@ defmodule Media.Helpers do
     )
 
     tmp_path
+  end
+
+  defp image_extension(<<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>), do: ".png"
+  defp image_extension(<<0xFF, 0xD8, _::binary>>), do: ".jpg"
+
+  defp image_extension(_), do: ""
+
+  def get_base64_info(file) do
+    size = String.length(file)
+
+    filename =
+      file
+      |> Base.decode64!()
+      |> fetch_extension()
+      |> unique_filename()
+
+    %{filename: filename, size: size}
+  end
+
+  @doc false
+  def unique_filename(extension) do
+    UUID.uuid4(:hex) <> extension
+  end
+
+  defp fetch_extension(file) do
+    file
+    |> image_extension()
   end
 
   @doc """

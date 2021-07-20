@@ -59,27 +59,6 @@ defmodule Media.S3Manager do
   alias ExAws.{S3, S3.Upload, STS}
   alias Media.Helpers
   # Helper functions to read the binary to determine the image extension
-  defp image_extension(<<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>), do: ".png"
-  defp image_extension(<<0xFF, 0xD8, _::binary>>), do: ".jpg"
-
-  defp image_extension(_), do: ""
-
-  def get_base64_info(file) do
-    size = String.length(file)
-
-    filename =
-      file
-      |> Base.decode64!()
-      |> fetch_extension()
-      |> unique_filename()
-
-    %{filename: filename, size: size}
-  end
-
-  defp fetch_extension(file) do
-    file
-    |> image_extension()
-  end
 
   @doc false
   def upload_file(filename, path) do
@@ -90,7 +69,7 @@ defmodule Media.S3Manager do
     filename = filename |> Path.basename(ext)
 
     aws_filename =
-      "#{Application.get_env(:media, :otp_app)}/#{filename}#{ext |> unique_filename()}"
+      "#{Application.get_env(:media, :otp_app)}/#{filename}#{ext |> Helpers.unique_filename()}"
 
     ## for test mocking purposes
     __MODULE__.upload(path, aws_filename)
@@ -204,11 +183,6 @@ defmodule Media.S3Manager do
     bucket = Helpers.aws_bucket_name()
     path = "https://s3.amazonaws.com/#{bucket}/#{file.key}"
     {:ok, %{id: file.e_tag, filename: file.key, path: path, bucket: bucket}}
-  end
-
-  @doc false
-  defp unique_filename(extension) do
-    UUID.uuid4(:hex) <> extension
   end
 
   @doc false
