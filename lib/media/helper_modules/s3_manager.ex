@@ -58,7 +58,6 @@ defmodule Media.S3Manager do
   """
   alias ExAws.{S3, S3.Upload, STS}
   alias Media.Helpers
-  # Helper functions to read the binary to determine the image extension
 
   @doc false
   def upload_file(filename, path) do
