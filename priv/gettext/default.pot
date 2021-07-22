@@ -14,3 +14,75 @@ msgstr ""
 #: lib/media_web/templates/page/index.html.eex:2
 msgid "Welcome to %{name}!"
 msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:310
+msgid "Between operation should contain value and value2"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:762
+msgid "Could not fetch youtube video details"
+msgstr ""
+
+#, elixir-format
+#: lib/media/schema/media_mongodb.ex:170
+msgid "Do not provide empty files"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:513
+msgid "Error when uploading files"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/s3_manager.ex:173
+#: lib/media/helper_modules/s3_manager.ex:179
+msgid "File not found"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:582
+msgid "Invalid binary file"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:287
+#: lib/media/helper_modules/helpers.ex:290
+msgid "Invalid data provided"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:756
+msgid "Please provide a valid video url"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:563
+msgid "Something went wrong when uploading your files. Reason:"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:587
+msgid "The file sent is not a base64 file"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:652
+msgid "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
+msgstr ""
+
+#, elixir-format
+#: lib/media/structs/mongodb.ex:246
+msgid "This platform cannot be deleted as it used by medias."
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/helpers.ex:759
+msgid "This video is not a youtube video"
+msgstr ""
+
+#, elixir-format
+#: lib/media/helper_modules/s3_manager.ex:137
+msgid "Unable to upload file to amazon"
+msgstr ""
