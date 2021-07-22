@@ -62,7 +62,7 @@ defmodule MediaWeb.MediaControllerTest do
        {:ok,
         %{
           bucket: Helpers.aws_bucket_name(),
-          filename: "#{file_name <> TestHelpers.uuid()}",
+          filename: "#{TestHelpers.uuid() <> file_name}",
           id: "#{TestHelpers.uuid()}",
           url: "some url"
         }}
@@ -71,7 +71,7 @@ defmodule MediaWeb.MediaControllerTest do
        {:ok,
         %{
           bucket: "aws_bucket_name",
-          filename: "#{file_name <> TestHelpers.uuid()}",
+          filename: "#{TestHelpers.uuid() <> file_name}",
           id: "#{TestHelpers.uuid()}",
           url: "some url"
         }}
@@ -125,6 +125,12 @@ defmodule MediaWeb.MediaControllerTest do
       TestHelpers.set_repo(Media.Repo, "postgreSQL")
 
       test_create_valid_media()
+    end
+
+    test "POST /media creates an invalid base64 media", %{conn: _conn} do
+      TestHelpers.set_repo(Media.Repo, "postgreSQL")
+
+      create_invalid_base64()
     end
 
     test "POST /media creates a media (type video)", %{conn: _conn} do
@@ -276,6 +282,12 @@ defmodule MediaWeb.MediaControllerTest do
       test_create_valid_media()
     end
 
+    test "POST /media creates an invalid base64 media", %{conn: _conn} do
+      TestHelpers.set_repo(:mongo, "mongoDB")
+
+      create_invalid_base64()
+    end
+
     test "POST /media returns error and roll back changes", %{conn: _conn} do
       TestHelpers.set_repo(:mongo, "mongoDB")
 
@@ -372,6 +384,30 @@ defmodule MediaWeb.MediaControllerTest do
     )
   end
 
+  def create_invalid_base64 do
+    platform = platform_fixture(%{"name" => "#{TestHelpers.uuid()}"})
+    conn = build_conn()
+
+    conn =
+      post(
+        conn,
+        TestHelpers.routes().media_path(conn, :insert_media),
+        @valid_attrs
+        |> Map.put(
+          "files",
+          %{
+            "1" => %{
+              "file" => "test/fixtures/phoenix.png",
+              "platform_id" => platform.id,
+              "base64" => true
+            }
+          }
+        )
+      )
+
+    assert json_response(conn, 422)
+  end
+
   def list_medias(attrs \\ %{}) do
     conn = build_conn()
 
@@ -404,29 +440,63 @@ defmodule MediaWeb.MediaControllerTest do
     conn = create_media(attrs)
 
     assert resp = json_response(conn, 200)
-    type = attrs["type"]
 
-    assert %{
-             "id" => _id,
-             "author" => "some author id",
-             "locked_status" => "locked",
-             "private_status" => "public",
-             "seo_tag" => "some seo tag",
-             "tags" => ["tag1", "tag2"],
-             "title" => "some media title",
-             "type" => ^type,
-             "files" => [
-               %{
-                 "file_id" => _fileid,
-                 "filename" => _filename,
-                 "platform_id" => _1598,
-                 "size" => _13900,
-                 "type" => _,
-                 "url" => _url,
-                 "thumbnail_url" => _thumbnail_url
-               }
-             ]
-           } = resp
+    case attrs["type"] do
+      "image" ->
+        assert %{
+                 "id" => _id,
+                 "author" => "some author id",
+                 "locked_status" => "locked",
+                 "private_status" => "public",
+                 "seo_tag" => "some seo tag",
+                 "tags" => ["tag1", "tag2"],
+                 "title" => "some media title",
+                 "type" => "image",
+                 "files" => [
+                   %{
+                     "file_id" => _fileid,
+                     "filename" => _filename,
+                     "platform_id" => _1598,
+                     "size" => _13900,
+                     "type" => _,
+                     "url" => _url,
+                     "thumbnail_url" => _thumbnail_url
+                   },
+                   %{
+                     "file_id" => _fileidbase64,
+                     "filename" => _filenamease64,
+                     "platform_id" => _1599,
+                     "size" => _13901,
+                     "type" => _typease64,
+                     "url" => _urlase64,
+                     "thumbnail_url" => _thumbnail_urlase64
+                   }
+                 ]
+               } = resp
+
+      "video" ->
+        assert %{
+                 "id" => _id,
+                 "author" => "some author id",
+                 "locked_status" => "locked",
+                 "private_status" => "public",
+                 "seo_tag" => "some seo tag",
+                 "tags" => ["tag1", "tag2"],
+                 "title" => "some media title",
+                 "type" => "video",
+                 "files" => [
+                   %{
+                     "file_id" => _fileid,
+                     "filename" => _filename,
+                     "platform_id" => _1598,
+                     "size" => _13900,
+                     "type" => _,
+                     "url" => _url,
+                     "thumbnail_url" => _thumbnail_url
+                   }
+                 ]
+               } = resp
+    end
   end
 
   def test_get_media(attrs \\ @valid_attrs) do
@@ -445,6 +515,24 @@ defmodule MediaWeb.MediaControllerTest do
     assert %{
              "author" => "some author id",
              "files" => [
+               %{
+                 "file_id" => _fileid1,
+                 "filename" => _filename_fileid1,
+                 "platform" => %{
+                   "description" => "some description",
+                   "height" => 42,
+                   "id" => _16091,
+                   "inserted_at" => _date11,
+                   "name" => _name,
+                   "updated_at" => _date2,
+                   "width" => 42
+                 },
+                 "platform_id" => _1610,
+                 "size" => _13900,
+                 "type" => "image/png",
+                 "thumbnail_url" => _thumbnail_url,
+                 "url" => url
+               },
                %{
                  #  "duration" => nil,
                  "file_id" => _fileid,
@@ -622,8 +710,8 @@ defmodule MediaWeb.MediaControllerTest do
     assert resp = json_response(conn, 200)
     id = resp["id"]
 
-    assert_called_exactly(S3Manager.upload_file(:_, :_), 1)
-    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 1)
+    assert_called_exactly(S3Manager.upload_file(:_, :_), 2)
+    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 2)
 
     assert @valid_attrs |> Map.put("id", id) |> Map.put("number_of_contents", 0) ==
              resp |> Map.delete("files")
@@ -654,8 +742,8 @@ defmodule MediaWeb.MediaControllerTest do
     ## two times due to the fact that we need to create the thumbnail
     ## so basically two calls to insert the media and 0 calls when we
     ## did update with the same files
-    assert_called_exactly(S3Manager.upload_file(:_, :_), 1)
-    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 1)
+    assert_called_exactly(S3Manager.upload_file(:_, :_), 2)
+    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 2)
   end
 
   def test_update_media_files do
@@ -664,8 +752,8 @@ defmodule MediaWeb.MediaControllerTest do
     assert resp = json_response(conn, 200)
     id = resp["id"]
 
-    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 1)
-    assert_called_exactly(S3Manager.upload_file(:_, :_), 1)
+    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 2)
+    assert_called_exactly(S3Manager.upload_file(:_, :_), 2)
 
     assert @valid_attrs |> Map.put("id", id) |> Map.put("number_of_contents", 0) ==
              resp |> Map.delete("files")
@@ -705,11 +793,11 @@ defmodule MediaWeb.MediaControllerTest do
     ## two times due to the fact that we need to create the thumbnail
     ## so basically two calls to insert the media and 2 calls when we
     ## did update with different files
-    assert_called_exactly(S3Manager.upload_file(:_, :_), 2)
-    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 2)
+    assert_called_exactly(S3Manager.upload_file(:_, :_), 4)
+    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 4)
 
     ## Deleted the files that were initially created
-    assert_called_exactly(S3Manager.delete_file(:_), 2)
+    assert_called_exactly(S3Manager.delete_file(:_), 4)
   end
 
   def test_invalid_update_media do
@@ -926,6 +1014,11 @@ defmodule MediaWeb.MediaControllerTest do
               content_type: "image/png"
             },
             "platform_id" => platform.id
+          },
+          "2" => %{
+            "file" => "test/fixtures/phoenix.png" |> File.read!() |> Base.encode64(),
+            "platform_id" => platform.id,
+            "base64" => true
           }
         }
 

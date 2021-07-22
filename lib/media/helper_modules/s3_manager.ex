@@ -58,6 +58,7 @@ defmodule Media.S3Manager do
   """
   alias ExAws.{S3, S3.Upload, STS}
   alias Media.Helpers
+
   @doc false
   def upload_file(filename, path) do
     ext =
@@ -67,7 +68,7 @@ defmodule Media.S3Manager do
     filename = filename |> Path.basename(ext)
 
     aws_filename =
-      "#{Application.get_env(:media, :otp_app)}/#{filename}#{ext |> unique_filename()}"
+      "#{Application.get_env(:media, :otp_app)}/#{filename}#{ext |> Helpers.unique_filename()}"
 
     ## for test mocking purposes
     __MODULE__.upload(path, aws_filename)
@@ -117,7 +118,17 @@ defmodule Media.S3Manager do
             }
           } = aws.body |> XmlToMap.naive_map()
 
-          {:ok, %{id: id, filename: name, url: url, bucket: bucket}}
+          ## the random string was added to the ETag
+          ## because the ETag is the hash of the object
+          ## so in case we upload two files on the same media we will have the same ETag
+          #  thus adding a random string at the end would be enough
+          {:ok,
+           %{
+             id: id <> String.slice(UUID.uuid4(:hex), 1..5),
+             filename: name,
+             url: url,
+             bucket: bucket
+           }}
 
         _ ->
           {:error, "Unable to upload file to amazon"}
@@ -171,11 +182,6 @@ defmodule Media.S3Manager do
     bucket = Helpers.aws_bucket_name()
     path = "https://s3.amazonaws.com/#{bucket}/#{file.key}"
     {:ok, %{id: file.e_tag, filename: file.key, path: path, bucket: bucket}}
-  end
-
-  @doc false
-  defp unique_filename(extension) do
-    UUID.uuid4(:hex) <> extension
   end
 
   @doc false

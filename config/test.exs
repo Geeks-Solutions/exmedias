@@ -17,8 +17,9 @@ config :media, Media.Repo,
   hostname: "postgre.eweev.rocks",
   pool: Ecto.Adapters.SQL.Sandbox,
   ownership_timeout: 60_000,
-  queue_target: 1_000,
-  queue_interval: 5_000
+  queue_target: 10_000,
+  queue_interval: 20_000,
+  timeout: 20_000
 
 ## MONGO TEST DB
 config :media, :db,
@@ -26,7 +27,7 @@ config :media, :db,
   database: "media_test",
   mongo_ssl: false,
   port: 8017,
-  pool_size: 2
+  pool_size: 10
 
 ## INITIALLY THE REPO SHOULD POINT TO
 ## MONGO DB SETUP for project inlcuding media as a dep
@@ -35,7 +36,7 @@ config :media,
   active_database: "mongoDB",
   repo: :mongo,
   aws_bucket_name: "eweevtestbucketprivate",
-  aws_role_name: "privateBucketRead",
+  aws_role_name: "FullBucketAccess",
   aws_iam_id: "403016165142"
 
 # content_schema: Sections.Section.Type
