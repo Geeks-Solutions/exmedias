@@ -1,0 +1,27 @@
+## This is a PO Template file.
+##
+## `msgid`s here are often extracted from source code.
+## Add new translations manually only if they're dynamic
+## translations that can't be statically extracted.
+##
+## Run `mix gettext.extract` to bring this file up to
+## date. Leave `msgstr`s empty as changing them here has no
+## effect: edit them in PO (`.po`) files instead.
+
+msgid "can't be blank"
+msgstr "Ce champ ne peut pas être vide"
+
+msgid "Username or Password is incorrect"
+msgstr "Les identifiants ne sont pas valide"
+
+msgid "User for this project already exist"
+msgstr "Cet email est déjà utilisé"
+
+msgid  "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
+msgstr "Le type ou la structure du fichier que vous avez fournis n'est pas supportée. Indice: Utilisez un nouveau fichier ou l'URL d'un fichier existant"
+
+msgid "Something went wrong when uploading your files. Reason:"
+msgstr "Une erreur s'est produite lors du téléchargement de votre fichier. La raison:"
+
+msgid "Invalid redirection URL for the on_click event. Please provide a valid URL and try again."
+msgstr "L'URL de redirection est invalide. Fournissez s'il vous plait une URL valide et essayer à nouveau"

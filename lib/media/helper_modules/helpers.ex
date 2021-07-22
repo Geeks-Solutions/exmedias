@@ -1,6 +1,7 @@
 defmodule Media.Helpers do
   @moduledoc false
   import Ecto.Changeset
+  import MediaWeb.Gettext
 
   alias BSON.ObjectId
   alias Ecto.Changeset
@@ -558,7 +559,8 @@ defmodule Media.Helpers do
     end)
     |> case do
       {_files, _changes, false, error} ->
-        {:error, "Something went wrong when uploading your files. Reason: #{error}"}
+        {:error,
+         gettext("Something went wrong when uploading your files. Reason:") <> " #{error}"}
 
       {files, _changes, true, _error} ->
         {:ok, files}
@@ -647,8 +649,9 @@ defmodule Media.Helpers do
   def upload_file(_, _, _privacy),
     do:
       {:error,
-       "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL.",
-       []}
+       gettext(
+         "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
+       ), []}
 
   def youtube_endpoint do
     "https://www.googleapis.com/youtube/v3"
