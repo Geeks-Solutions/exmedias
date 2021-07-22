@@ -284,10 +284,10 @@ defmodule Media.Helpers do
         {:ok, new_args}
 
       {:error, %{errors: errors}} ->
-        {:error, message: "Invalid data provided", errors: errors}
+        {:error, message: gettext("Invalid data provided"), errors: errors}
 
       {:error, error} ->
-        {:error, message: "Invalid data provided", errors: error}
+        {:error, message: gettext("Invalid data provided"), errors: error}
     end
   end
 
@@ -307,7 +307,7 @@ defmodule Media.Helpers do
         {:ok, res}
 
       :error ->
-        {:error, "Between operation should contain value and value2"}
+        {:error, gettext("Between operation should contain value and value2")}
     end
   end
 
@@ -510,7 +510,7 @@ defmodule Media.Helpers do
   def rollback_changes(files) do
     ## Revert uploaded files
     delete_files(files)
-    {:error, "Error when uploading files"}
+    {:error, gettext("Error when uploading files")}
   end
 
   def delete_files(files_to_delete) do
@@ -579,12 +579,12 @@ defmodule Media.Helpers do
         {:ok, %{path: temp_path, filename: filename, content_type: MIME.from_path(temp_path)}}
 
       _ ->
-        {:error, "Invalid binary file"}
+        {:error, gettext("Invalid binary file")}
     end
   end
 
   def convert_base64_to_file(_base64_file),
-    do: {:error, "The file sent is not a base64 file"}
+    do: {:error, gettext("The file sent is not a base64 file")}
 
   def upload_file(%{file_id: _file_id} = file, _type, _privacy), do: {:ok, file, []}
 
@@ -753,13 +753,13 @@ defmodule Media.Helpers do
        |> Map.delete(:file), []}
     else
       false ->
-        {:error, "Please provide a valid video url", []}
+        {:error, gettext("Please provide a valid video url"), []}
 
       {:error, :not_youtube_url} ->
-        {:error, "This video is not a youtube video", []}
+        {:error, gettext("This video is not a youtube video"), []}
 
       {:error, _} ->
-        {:error, "Could not fetch youtube video details", []}
+        {:error, gettext("Could not fetch youtube video details"), []}
     end
   end
 

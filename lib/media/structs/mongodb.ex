@@ -10,6 +10,7 @@ defmodule Media.MongoDB do
     alias Media.{Cartesian, FiltersMongoDB, Helpers, MongoDB}
     alias Media.MongoDB.Schema, as: MediaSchema
     alias Media.Platforms.Platform
+    import MediaWeb.Gettext
 
     def content_medias(%{args: id}) do
       if Helpers.valid_object_id?(id) do
@@ -242,7 +243,7 @@ defmodule Media.MongoDB do
           res
 
         true ->
-          {:error, "This platform cannot be deleted as it used by medias."}
+          {:error, gettext("This platform cannot be deleted as it used by medias.")}
 
         false ->
           {:error, Helpers.id_error_message(id)}

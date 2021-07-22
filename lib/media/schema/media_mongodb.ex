@@ -1,4 +1,6 @@
 defmodule Media.MongoDB.Schema do
+  import MediaWeb.Gettext
+
   @moduledoc """
     This is the media schema model.
     It represents the media properties and their types.
@@ -164,7 +166,8 @@ defmodule Media.MongoDB.Schema do
     result
   end
 
-  defp validate_content(file, _type) when file == %{}, do: {:error, "Do not provide empty files"}
+  defp validate_content(file, _type) when file == %{},
+    do: {:error, gettext("Do not provide empty files")}
 
   defp validate_content(file, type) when is_map(file) do
     {:ok, file} =

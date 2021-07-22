@@ -1,4 +1,6 @@
 defmodule Media.S3Manager do
+  import MediaWeb.Gettext
+
   @moduledoc """
     Amazon Web Services [AWS](https://aws.amazon.com) is an essential part of **Medias** Functionalities. In order to take advantage of all **Medias** features, you need to provide the needed AWS data.
 
@@ -58,6 +60,7 @@ defmodule Media.S3Manager do
   """
   alias ExAws.{S3, S3.Upload, STS}
   alias Media.Helpers
+  import MediaWeb.Gettext
 
   @doc false
   def upload_file(filename, path) do
@@ -131,7 +134,7 @@ defmodule Media.S3Manager do
            }}
 
         _ ->
-          {:error, "Unable to upload file to amazon"}
+          {:error, gettext("Unable to upload file to amazon")}
       end
     else
       {:ok,
@@ -167,13 +170,13 @@ defmodule Media.S3Manager do
         fetch_file(contents)
 
       _ ->
-        {:error, "File not found"}
+        {:error, gettext("File not found")}
     end
   end
 
   @doc false
   def fetch_file([]) do
-    {:error, "File not found"}
+    {:error, gettext("File not found")}
   end
 
   @doc false
