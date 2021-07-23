@@ -64,14 +64,16 @@ defmodule MediaWeb.PlatformControllerTest do
     "description" => "some description",
     "height" => 42,
     "name" => "some name",
-    "width" => 42
+    "width" => 42,
+    "namespace" => "some namespace"
   }
   @invalid_attrs %{description: nil, height: nil, name: nil, width: nil}
   @update_attrs %{
     "description" => "some updated description",
     "height" => 43,
     "name" => "some updated name",
-    "width" => 43
+    "width" => 43,
+    "namespace" => "update namespace"
   }
   describe "PostgreSQL:" do
     test "POST /platform creates a platform", %{conn: _conn} do
