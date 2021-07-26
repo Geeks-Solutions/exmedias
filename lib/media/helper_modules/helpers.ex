@@ -312,9 +312,14 @@ defmodule Media.Helpers do
   end
 
   def check_error_operation(%{operation: op}) do
-    {_suc, error} = Enum.split_with(op, fn {_k, v} -> v != "error" end)
+    # {_suc, error} = Enum.split_with(op, fn {_k, v} -> v != "error" end)
+    result =
+      Enum.any?(
+        op,
+        &Enum.any?(&1, fn {_k, v} -> v == "error" end)
+      )
 
-    if error != [] do
+    if result do
       :error
     else
       :ok
@@ -325,34 +330,44 @@ defmodule Media.Helpers do
     {[], []}
   end
 
-  def format_filter_post(filters) when is_list(filters) do
-    case filters do
+  def format_filter_post(all_filters) when is_list(all_filters) do
+    case all_filters do
       [] ->
         {[], %{}}
 
       _ ->
-        Enum.reduce(filters, {[], %{}}, fn filter, {fil, operation} ->
-          {op, val} = get_op(filter)
-
-          {
-            if val != [] do
-              fil
-              |> List.insert_at(
-                -1,
-                cartesian([filter |> extract_param("key")], [val])
-              )
-            else
-              fil
-            end,
-            if op != nil do
-              operation
-              |> Map.put(extract_param(filter, "key"), op)
-            else
-              operation
-            end
-          }
+        # {[[]], [ops]}
+        Enum.reduce(all_filters, {[], []}, fn filters, {filters_acc, ops_acc} ->
+          {new_filters, new_o} = format_filters(filters)
+          {filters_acc ++ [new_filters], List.insert_at(ops_acc, -1, new_o)}
         end)
     end
+  end
+
+  def format_filters(filters) do
+    Enum.reduce(filters, {[], %{}}, fn filter, {fil, operation} ->
+      {op, val} = get_op(filter)
+
+      {
+        if val != [] do
+          key = filter |> extract_param("key")
+
+          fil
+          |> List.insert_at(
+            -1,
+            %{key => val}
+          )
+        else
+          fil
+        end,
+        if op != nil do
+          operation
+          |> Map.put(extract_param(filter, "key"), op)
+        else
+          operation
+        end
+      }
+    end)
   end
 
   defp get_op(filter) do

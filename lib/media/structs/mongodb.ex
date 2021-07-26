@@ -7,7 +7,7 @@ defmodule Media.MongoDB do
     @platform_collection "platform"
     @schema_collection %{"platform" => Media.Platforms.Platform, "media" => Media.MongoDB.Schema}
     alias BSON.ObjectId
-    alias Media.{Cartesian, FiltersMongoDB, Helpers, MongoDB}
+    alias Media.{FiltersMongoDB, Helpers, MongoDB}
     alias Media.MongoDB.Schema, as: MediaSchema
     alias Media.Platforms.Platform
     import MediaWeb.Gettext
@@ -15,7 +15,7 @@ defmodule Media.MongoDB do
     def content_medias(%{args: id}) do
       if Helpers.valid_object_id?(id) do
         %{result: result} =
-          list_medias(%MongoDB{args: %{filters: [%{key: "contents_used", value: id}]}})
+          list_medias(%MongoDB{args: %{filters: [[%{key: "contents_used", value: id}]]}})
 
         result
       else
@@ -56,8 +56,7 @@ defmodule Media.MongoDB do
              {sort, []} <-
                {sort,
                 FiltersMongoDB.init(
-                  filters
-                  |> Cartesian.possible_combinations(),
+                  filters,
                   operations
                 )} do
           {sort, []}
@@ -130,8 +129,7 @@ defmodule Media.MongoDB do
              {sort, []} <-
                {sort,
                 FiltersMongoDB.init(
-                  filters
-                  |> Cartesian.possible_combinations(),
+                  filters,
                   operations
                 )} do
           {sort, []}
