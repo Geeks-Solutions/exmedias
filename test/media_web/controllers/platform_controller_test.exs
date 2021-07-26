@@ -407,7 +407,12 @@ defmodule MediaWeb.PlatformControllerTest do
     conn =
       create_platform(
         @valid_attrs
-        |> Map.merge(%{"name" => "name-#{TestHelpers.uuid()}", "width" => 100, "height" => 200})
+        |> Map.merge(%{
+          "namespace" => "project_1",
+          "name" => "name-#{TestHelpers.uuid()}",
+          "width" => 100,
+          "height" => 200
+        })
       )
 
     assert platform2 = json_response(conn, 200)
@@ -508,6 +513,11 @@ defmodule MediaWeb.PlatformControllerTest do
            } = json_response(conn, 200)
 
     assert args |> Enum.count() == 2
+
+    conn = list_platforms(~s'{"filters": [{"key": "namespace", "value": "project_1"}]}')
+
+    assert %{"result" => [%{"id" => ^platform2_id, "name" => ^platform2_name}], "total" => 1} =
+             json_response(conn, 200)
   end
 
   def test_list_platforms do
