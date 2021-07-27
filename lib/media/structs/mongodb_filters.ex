@@ -82,7 +82,7 @@ defmodule Media.FiltersMongoDB do
   ## this is how it was done no zencca but I was not sure of the purpose
   def init(filters, op) when is_list(filters) do
     ## remove the computed filter from here
-    {computed_op, op} = Map.split(op, @computed_filters)
+    {computed_op, op} = Map.split(op |> Enum.at(0), @computed_filters)
 
     {computed_filters, filters} =
       Enum.split_with(filters |> Enum.at(0), fn filter ->

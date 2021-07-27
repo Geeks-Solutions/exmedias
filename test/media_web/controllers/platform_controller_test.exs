@@ -446,7 +446,7 @@ defmodule MediaWeb.PlatformControllerTest do
     platform_id = platform["id"]
     platform_name = platform["name"]
 
-    conn = list_platforms(~s'{"filters": [{"key": "name", "value": "#{platform_name}"}]}')
+    conn = list_platforms(~s'{"filters": [[{"key": "name", "value": "#{platform_name}"}]]}')
 
     assert %{"result" => [%{"id" => ^platform_id, "name" => ^platform_name}], "total" => 1} =
              json_response(conn, 200)
@@ -454,20 +454,22 @@ defmodule MediaWeb.PlatformControllerTest do
     platform2_id = platform2["id"]
     platform2_name = platform2["name"]
     ## FILTER BY HEIGHT
-    conn = list_platforms(~s'{"filters": [{"key": "height", "value": 200}]}')
+    conn = list_platforms(~s'{"filters": [[{"key": "height", "value": 200}]]}')
 
     assert %{"result" => [%{"id" => ^platform2_id, "name" => ^platform2_name}], "total" => 1} =
              json_response(conn, 200)
 
     ## FILTER BY WITDH
-    conn = list_platforms(~s'{"filters": [{"key": "width", "value": 100}]}')
+    conn = list_platforms(~s'{"filters": [[{"key": "width", "value": 100}]]}')
 
     assert %{"result" => [%{"id" => ^platform2_id, "name" => ^platform2_name}], "total" => 1} =
              json_response(conn, 200)
 
     ## number of contents
     conn =
-      list_platforms(~s'{"filters": [{"key": "number_of_medias", "value": 3, "operation": "="}]}')
+      list_platforms(
+        ~s'{"filters": [[{"key": "number_of_medias", "value": 3, "operation": "="}]]}'
+      )
 
     assert %{
              "result" => [
@@ -477,7 +479,9 @@ defmodule MediaWeb.PlatformControllerTest do
            } = json_response(conn, 200)
 
     conn =
-      list_platforms(~s'{"filters": [{"key": "number_of_medias", "value": 3, "operation": ">"}]}')
+      list_platforms(
+        ~s'{"filters": [[{"key": "number_of_medias", "value": 3, "operation": ">"}]]}'
+      )
 
     assert %{
              "result" => [],
@@ -485,7 +489,9 @@ defmodule MediaWeb.PlatformControllerTest do
            } = json_response(conn, 200)
 
     conn =
-      list_platforms(~s'{"filters": [{"key": "number_of_medias", "value": 4, "operation": "<"}]}')
+      list_platforms(
+        ~s'{"filters": [[{"key": "number_of_medias", "value": 4, "operation": "<"}]]}'
+      )
 
     assert %{
              "result" => _args,
@@ -493,7 +499,9 @@ defmodule MediaWeb.PlatformControllerTest do
            } = json_response(conn, 200)
 
     conn =
-      list_platforms(~s'{"filters": [{"key": "number_of_medias", "value": 3, "operation": "<"}]}')
+      list_platforms(
+        ~s'{"filters": [[{"key": "number_of_medias", "value": 3, "operation": "<"}]]}'
+      )
 
     assert %{
              "result" => [
@@ -504,7 +512,7 @@ defmodule MediaWeb.PlatformControllerTest do
 
     conn =
       list_platforms(
-        ~s'{"filters": [{"key": "number_of_medias", "value": 3, "operation": "<="}]}'
+        ~s'{"filters": [[{"key": "number_of_medias", "value": 3, "operation": "<="}]]}'
       )
 
     assert %{
@@ -514,7 +522,7 @@ defmodule MediaWeb.PlatformControllerTest do
 
     assert args |> Enum.count() == 2
 
-    conn = list_platforms(~s'{"filters": [{"key": "namespace", "value": "project_1"}]}')
+    conn = list_platforms(~s'{"filters": [[{"key": "namespace", "value": "project_1"}]]}')
 
     assert %{"result" => [%{"id" => ^platform2_id, "name" => ^platform2_name}], "total" => 1} =
              json_response(conn, 200)

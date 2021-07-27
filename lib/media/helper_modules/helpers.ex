@@ -277,7 +277,15 @@ defmodule Media.Helpers do
     do: Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
 
   ### FILTERS HELPERS ###
-
+  @doc """
+  This function accepts a list of filters where each filter is a list of filters.
+  i.e. [[%{key: title, value: "title"}], [%{key: number_of_contents, value: 1, operation: ">"}]]
+  The output is {:ok, %{operation: op, filters: filters, sort: sort}} where
+  the filters would be with the following format:
+  i.e. [[%{title: "title"}], [%{number_of_contents: 1]]
+  the operations would be with the following format:
+  [%{title: %{operation: nil}}, %{number_of_contents: %{operation: ">"}}]
+  """
   def build_params(params) do
     case build_args(params |> Helpers.atomize_keys()) do
       {:ok, new_args} ->
@@ -312,47 +320,66 @@ defmodule Media.Helpers do
   end
 
   def check_error_operation(%{operation: op}) do
-    {_suc, error} = Enum.split_with(op, fn {_k, v} -> v != "error" end)
+    # {_suc, error} = Enum.split_with(op, fn {_k, v} -> v != "error" end)
+    result =
+      Enum.any?(
+        op,
+        &Enum.any?(&1, fn {_k, v} -> v == "error" end)
+      )
 
-    if error != [] do
+    if result do
       :error
     else
       :ok
     end
   end
 
+  @doc """
+  This function is responsible for sperating the operations from the filters.
+  """
   def format_filter_post(nil) do
     {[], []}
   end
 
-  def format_filter_post(filters) when is_list(filters) do
-    case filters do
+  def format_filter_post(all_filters) when is_list(all_filters) do
+    case all_filters do
       [] ->
         {[], %{}}
 
       _ ->
-        Enum.reduce(filters, {[], %{}}, fn filter, {fil, operation} ->
-          {op, val} = get_op(filter)
-
-          {
-            if val != [] do
-              fil
-              |> List.insert_at(
-                -1,
-                cartesian([filter |> extract_param("key")], [val])
-              )
-            else
-              fil
-            end,
-            if op != nil do
-              operation
-              |> Map.put(extract_param(filter, "key"), op)
-            else
-              operation
-            end
-          }
+        # {[[]], [ops]}
+        Enum.reduce(all_filters, {[], []}, fn filters, {filters_acc, ops_acc} ->
+          {new_filters, new_o} = format_filters(filters)
+          {filters_acc ++ [new_filters], List.insert_at(ops_acc, -1, new_o)}
         end)
     end
+  end
+
+  def format_filters(filters) do
+    Enum.reduce(filters, {[], %{}}, fn filter, {fil, operation} ->
+      {op, val} = get_op(filter)
+
+      {
+        if val != [] do
+          key = filter |> extract_param("key")
+          ## this used to put all the combinations of the values for a filter
+          ## we don't have this scenario so It is removed.
+          fil
+          |> List.insert_at(
+            -1,
+            %{key => val}
+          )
+        else
+          fil
+        end,
+        if op != nil do
+          operation
+          |> Map.put(extract_param(filter, "key"), op)
+        else
+          operation
+        end
+      }
+    end)
   end
 
   defp get_op(filter) do

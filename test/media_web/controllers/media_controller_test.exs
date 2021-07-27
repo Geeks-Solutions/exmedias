@@ -523,14 +523,14 @@ defmodule MediaWeb.MediaControllerTest do
                    "height" => 42,
                    "id" => _16091,
                    "inserted_at" => _date11,
-                   "name" => _name,
-                   "updated_at" => _date2,
+                   "name" => _name1,
+                   "updated_at" => _date21,
                    "width" => 42
                  },
-                 "platform_id" => _1610,
-                 "size" => _13900,
+                 "platform_id" => _1611,
+                 "size" => _13901,
                  "type" => "image/png",
-                 "thumbnail_url" => _thumbnail_url,
+                 "thumbnail_url" => _thumbnail_url1,
                  "url" => url
                },
                %{
@@ -549,7 +549,7 @@ defmodule MediaWeb.MediaControllerTest do
                  "platform_id" => _1610,
                  "size" => _13900,
                  "type" => "image/png",
-                 "thumbnail_url" => _thumbnail_url,
+                 "thumbnail_url" => _thumbnail_url2,
                  "url" => url
                } = file
              ],
@@ -858,7 +858,7 @@ defmodule MediaWeb.MediaControllerTest do
     ## FILTER BY TITLE
     media_id_2 = media2["id"]
     media_title_2 = media2["title"]
-    conn = list_medias(~s'{"filters": [{"key": "title", "value": "Media Title 2"}]}')
+    conn = list_medias(~s'{"filters": [[{"key": "title", "value": "Media Title 2"}]]}')
 
     assert %{"result" => [%{"id" => ^media_id_2, "title" => ^media_title_2}], "total" => 1} =
              json_response(conn, 200)
@@ -866,25 +866,27 @@ defmodule MediaWeb.MediaControllerTest do
     media_id_1 = media1["id"]
     media_title_1 = media1["title"]
     ## type of media
-    conn = list_medias(~s'{"filters": [{"key": "type", "value": "image"}]}')
+    conn = list_medias(~s'{"filters": [[{"key": "type", "value": "image"}]]}')
 
     assert %{"result" => [%{"id" => ^media_id_1, "title" => ^media_title_1}], "total" => 1} =
              json_response(conn, 200)
 
     ## number of contents
     conn =
-      list_medias(~s'{"filters": [{"key": "number_of_contents", "value": 0, "operation": "="}]}')
+      list_medias(
+        ~s'{"filters": [[{"key": "number_of_contents", "value": 0, "operation": "="}]]}'
+      )
 
     assert %{"result" => _res, "total" => 3} = json_response(conn, 200)
 
     ## filter by private_status
 
-    conn = list_medias(~s'{"filters": [{"key": "private_status", "value": "private"}]}')
+    conn = list_medias(~s'{"filters": [[{"key": "private_status", "value": "private"}]]}')
 
     assert %{"total" => 1} = json_response(conn, 200)
 
     ## filter by lock_status
-    conn = list_medias(~s'{"filters": [{"key": "locked_status", "value": "unlocked"}]}')
+    conn = list_medias(~s'{"filters": [[{"key": "locked_status", "value": "unlocked"}]]}')
     assert %{"total" => 1} = json_response(conn, 200)
   end
 

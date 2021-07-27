@@ -48,21 +48,39 @@ defmodule Media.FiltersPostgreSQL do
     end
   end
 
+  @doc """
+  This function accepts the format of the Helpers.build_params/1.
+  The format of the filters looks like the following:
+  [[%{title: "title"}], [%{number_of_contents: 1]]
+  while the operation param:
+  [%{title: %{operation: nil}}, %{number_of_contents: %{operation: ">"}}]
+  The filters inside the same list will be grouped with AND condition.
+  While the filters from different lists will grouped with OR condition
+  """
   def init(query, filters, op \\ %{})
 
   def init(query, filters, _op) when filters == [],
     do: query
 
-  def init(query, filters, op) when is_list(filters) do
+  def init(query, all_filters, ops) when is_list(all_filters) do
     ## remove the computed filter from here
-    {computed_op, op} = Map.split(op, @computed_filters)
-
-    {computed_filters, filters} =
-      Enum.split_with(filters |> Enum.at(0), fn filter ->
-        (Map.keys(filter) |> Enum.at(0)) in @computed_filters
+    {computed_op, op} =
+      Enum.reduce(ops, {%{}, []}, fn op, {computed_ops, normal_ops} ->
+        {computed_op, op} = Map.split(op, @computed_filters)
+        {computed_op |> Map.merge(computed_ops), normal_ops ++ [op]}
       end)
 
-    filters = [filters]
+    {computed_filters, filters} =
+      Enum.reduce(all_filters, {[], []}, fn filters, {comp_filters, normal_filters} ->
+        {computed_filters, filters} =
+          Enum.split_with(filters, fn filter ->
+            (Map.keys(filter) |> Enum.at(0)) in @computed_filters
+          end)
+
+        {computed_filters ++ comp_filters, [filters] ++ normal_filters}
+      end)
+
+    # filters = [filters]
 
     conditions =
       Enum.reduce(filters, false, fn filter, condition ->
@@ -167,7 +185,13 @@ defmodule Media.FiltersPostgreSQL do
   end
 
   defp number_of_medias_op(value, dynamic, op) do
-    op = Map.get(op, "number_of_medias", %{})
+    op =
+      Enum.find(op, fn
+        %{"number_of_medias" => _op} -> true
+        _ -> false
+      end)
+      |> Map.get("number_of_medias")
+
     operation = op |> Map.get("operation", ">=")
 
     case operation do
@@ -208,12 +232,12 @@ defmodule Media.FiltersPostgreSQL do
           ^dynamic and fragment("COALESCE(?, 0) <= ?::bigint", s.number_of_medias, ^value)
         )
 
-      val ->
+      _val ->
         handle_rest_of_operations(value, dynamic, operation)
     end
   end
 
-  def handle_rest_of_operations(value, dynamic, op) when op in ["between", "<>"] do
+  def handle_rest_of_operations(_value, dynamic, op) when op in ["between", "<>"] do
     {from, _} = Map.get(op, "from") |> Float.parse()
     {to, _} = Map.get(op, "to") |> Float.parse()
 

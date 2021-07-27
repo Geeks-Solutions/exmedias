@@ -1,6 +1,5 @@
 defmodule Media.PostgreSQL do
   @moduledoc false
-  alias Media.Cartesian
   alias Media.FiltersPostgreSQL
   alias Media.Helpers
   import Ecto.Query
@@ -93,7 +92,7 @@ defmodule Media.PostgreSQL do
           result =
             full_media_query()
             |> FiltersPostgreSQL.init(
-              filters |> Cartesian.possible_combinations(),
+              filters,
               operation
             )
             |> group_by([m], m.id)
@@ -315,7 +314,7 @@ defmodule Media.PostgreSQL do
           result =
             full_platform_query()
             |> FiltersPostgreSQL.init(
-              filters |> Cartesian.possible_combinations(),
+              filters,
               operation
             )
             # |> group_by([m], m.id)
