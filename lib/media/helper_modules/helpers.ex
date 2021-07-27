@@ -277,7 +277,15 @@ defmodule Media.Helpers do
     do: Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
 
   ### FILTERS HELPERS ###
-
+  @doc """
+  This function accepts a list of filters where each filter is a list of filters.
+  i.e. [[%{key: title, value: "title"}], [%{key: number_of_contents, value: 1, operation: ">"}]]
+  The output is {:ok, %{operation: op, filters: filters, sort: sort}} where
+  the filters would be with the following format:
+  i.e. [[%{title: "title"}], [%{number_of_contents: 1]]
+  the operations would be with the following format:
+  [%{title: %{operation: nil}}, %{number_of_contents: %{operation: ">"}}]
+  """
   def build_params(params) do
     case build_args(params |> Helpers.atomize_keys()) do
       {:ok, new_args} ->
@@ -326,6 +334,9 @@ defmodule Media.Helpers do
     end
   end
 
+  @doc """
+  This function is responsible for sperating the operations from the filters.
+  """
   def format_filter_post(nil) do
     {[], []}
   end
@@ -351,7 +362,8 @@ defmodule Media.Helpers do
       {
         if val != [] do
           key = filter |> extract_param("key")
-
+          ## this used to put all the combinations of the values for a filter
+          ## we don't have this scenario so It is removed.
           fil
           |> List.insert_at(
             -1,

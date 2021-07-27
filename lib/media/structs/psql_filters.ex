@@ -48,6 +48,15 @@ defmodule Media.FiltersPostgreSQL do
     end
   end
 
+  @doc """
+  This function accepts the format of the Helpers.build_params/1.
+  The format of the filters looks like the following:
+  [[%{title: "title"}], [%{number_of_contents: 1]]
+  while the operation param:
+  [%{title: %{operation: nil}}, %{number_of_contents: %{operation: ">"}}]
+  The filters inside the same list will be grouped with AND condition.
+  While the filters from different lists will grouped with OR condition
+  """
   def init(query, filters, op \\ %{})
 
   def init(query, filters, _op) when filters == [],
