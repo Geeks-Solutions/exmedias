@@ -25,6 +25,7 @@ defmodule Media.PostgreSQL.Schema do
   import Ecto.Changeset
   alias Media.Helpers
   alias Media.Schema.File
+
   @fields ~w(title author tags type locked_status private_status seo_tag namespace)a
   @derive {Jason.Encoder,
            only: @fields ++ [:id, :number_of_contents, :files, :updated_at, :inserted_at]}
@@ -94,6 +95,7 @@ defmodule Media.PostgreSQL.Schema do
     changeset = Map.put(changeset, :params, attrs)
 
     changeset
+    |> Helpers.validate_platforms(attrs)
     |> put_embed(
       :files,
       attrs |> Helpers.extract_param(:files)

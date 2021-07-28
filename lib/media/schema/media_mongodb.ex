@@ -110,6 +110,7 @@ defmodule Media.MongoDB.Schema do
       |> Helpers.update_files(attrs)
 
     changeset
+    |> Helpers.validate_platforms(attrs)
     |> cast(attrs, [:files])
     |> validate_files(attrs |> Map.get(:files) || attrs |> Map.get("files"))
   end

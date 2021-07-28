@@ -151,6 +151,18 @@ defmodule MediaWeb.MediaControllerTest do
       test_invalid_media_creation_author()
     end
 
+    test "POST /media return error (with a non existing platform)", %{conn: _conn} do
+      TestHelpers.set_repo(Media.Repo, "postgreSQL")
+
+      test_create_media_with_non_existing_platform("postgreSQL")
+    end
+
+    test "POST /media return error (with invalid platform id)", %{conn: _conn} do
+      TestHelpers.set_repo(Media.Repo, "postgreSQL")
+
+      test_create_media_with_non_valid_platform_id()
+    end
+
     test "POST /media returns error when invalid data(type)", %{conn: _conn} do
       TestHelpers.set_repo(Media.Repo, "postgreSQL")
 
@@ -292,6 +304,18 @@ defmodule MediaWeb.MediaControllerTest do
       TestHelpers.set_repo(:mongo, "mongoDB")
 
       test_media_rollback()
+    end
+
+    test "POST /media return error (with a platform non existing)", %{conn: _conn} do
+      TestHelpers.set_repo(:mongo, "mongoDB")
+
+      test_create_media_with_non_existing_platform("mongoDB")
+    end
+
+    test "POST /media return error (with invalid platform_id)", %{conn: _conn} do
+      TestHelpers.set_repo(:mongo, "mongoDB")
+
+      test_create_media_with_non_valid_platform_id()
     end
 
     setup _context do
@@ -1074,5 +1098,49 @@ defmodule MediaWeb.MediaControllerTest do
 
     ## assert that the rollback deleted the two initial files that were downloaded
     assert_called_exactly(S3Manager.delete_file(:_), 2)
+  end
+
+  def test_create_media_with_non_existing_platform(db) do
+    files = %{
+      "1" => %{
+        "file" => %{url: "https://www.youtube.com/watch?v=3HkggxR_kvE"},
+        "platform_id" => if(db == "mongoDB", do: "000000000000000000000000", else: 0)
+      }
+    }
+
+    attrs = @valid_attrs |> Map.put("files", files) |> Map.put("type", "video")
+
+    conn = build_conn()
+
+    conn =
+      post(
+        conn,
+        TestHelpers.routes().media_path(conn, :insert_media),
+        attrs
+      )
+
+    assert %{"errors" => %{"platform" => _platforms}} = json_response(conn, 422)
+  end
+
+  def test_create_media_with_non_valid_platform_id do
+    files = %{
+      "1" => %{
+        "file" => %{url: "https://www.youtube.com/watch?v=3HkggxR_kvE"},
+        "platform_id" => "invalid id"
+      }
+    }
+
+    attrs = @valid_attrs |> Map.put("files", files) |> Map.put("type", "video")
+
+    conn = build_conn()
+
+    conn =
+      post(
+        conn,
+        TestHelpers.routes().media_path(conn, :insert_media),
+        attrs
+      )
+
+    assert %{"errors" => %{"platform" => _platforms}} = json_response(conn, 422)
   end
 end

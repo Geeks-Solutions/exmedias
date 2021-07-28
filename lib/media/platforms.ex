@@ -22,18 +22,18 @@ defmodule Media.Platforms do
   @doc """
   Gets a single platform.
 
-  Raises `Ecto.NoResultsError` if the Platform does not exist.
+  Returns nil if the Platform does not exist.
 
   ## Examples
 
-      iex> get_platform!(123)
+      iex> get_platform(123)
       %Platform{}
 
-      iex> get_platform!(456)
-      ** (Ecto.NoResultsError)
+      iex> get_platform(0)
+      nil
 
   """
-  def get_platform!(id), do: Helpers.repo().get!(Platform, id)
+  def get_platform(id), do: Helpers.repo().get(Platform, id)
 
   @doc """
   Creates a platform.
