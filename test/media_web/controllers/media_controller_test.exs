@@ -110,7 +110,6 @@ defmodule MediaWeb.MediaControllerTest do
       media_id_1 = resp["id"]
       {:ok, %{id: ^media_id_1} = media} = Media.Context.get_media(media_id_1)
       conn = create_media()
-
       assert resp = json_response(conn, 200)
       media_id_2 = resp["id"]
       {:ok, %{id: ^media_id_2} = media2} = Media.Context.get_media(media_id_2)

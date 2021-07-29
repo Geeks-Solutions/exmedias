@@ -26,7 +26,7 @@ defmodule Media.PostgreSQL do
           {:error, "invalid_id"}
 
         {id, _} ->
-          query_content_medias(id)
+          {:ok, query_content_medias(id)}
       end
     end
 

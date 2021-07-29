@@ -505,6 +505,7 @@ defmodule Media.Helpers do
         new_files_ids = new_files |> Enum.map(& &1.file_id)
 
         ## delete unused files
+
         Enum.filter(old_files, &(Map.get(&1, :file_id) not in new_files_ids))
         |> delete_file_and_thumbnail()
 
@@ -921,4 +922,20 @@ defmodule Media.Helpers do
   defp get_platform(id) do
     Context.get_platform(id)
   end
+
+  def render(structs, opts \\ %{return_type: :struct})
+  def render(data, %{return_type: :struct}), do: data
+
+  def render(structs, %{return_type: :map}) when is_list(structs),
+    do: Enum.map(structs, &render(&1))
+
+  def render(struct, %{return_type: :map}) when is_struct(struct) do
+    ## transforms a struct to a json
+    struct |> Map.delete(:__struct__) |> Map.delete(:__meta__)
+    ## transforms a json to an elixir map with atom keys
+    # {:ok, media} = media |> Jason.decode(keys: :atoms)
+    # media
+  end
+
+  def render(data, _), do: data
 end

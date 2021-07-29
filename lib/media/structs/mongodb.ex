@@ -17,7 +17,7 @@ defmodule Media.MongoDB do
         %{result: result} =
           list_medias(%MongoDB{args: %{filters: [[%{key: "contents_used", value: id}]]}})
 
-        result
+        {:ok, result}
       else
         {:error, "Invalid id"}
       end
