@@ -35,7 +35,12 @@ defmodule Media.Helpers do
     Please make sure to provide a configuration for aws. e.g:
       config :media,
         aws_access_key_id: your_access_key_id,
-        aws_secret_key: secret_access_key
+        aws_secret_key: your_secret_access_key,
+        aws_role_name: your_role_name,
+        aws_iam_id: your_aws_iam_id,
+        aws_bucket_name: your_aws_bucket_name
+
+    If you are not sure how to get these values, please head to our documentation and check the S3Manager module.
     ")
     [access_key_id: aws_key, secret_access_key: aws_secret_key, region: region]
   end

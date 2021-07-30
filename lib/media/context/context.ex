@@ -118,10 +118,39 @@ defmodule Media.Context do
 
   Listing all available medias filtered:
 
+  Filtering supports both conditions `OR` and `AND`, it all depends on how you provide the structure of your filters.
+
+  If we want to provide for example the following filter:
+  ``(title=my_portrait and type=image) or (private_status=public)``
+
+  we supply the following payload:
   ```elixir
-  Media.Context.get_medias(%{filters: [%{key: "number_of_contents", value: 10, operation: "<" }]})
-  Media.Context.get_medias(%{filters: [%{key: "id", value: 134}]})
-  Media.Context.get_medias(%{filters: [%{key: "number_of_contents", value: 5, operation: ">" }, %{key: "type", value: "image"}]})
+  %{
+    filters: [
+        [
+            %{
+                key: "title",
+                value: "my_portrait"
+            },
+            %{
+                key: "type",
+                value: "image"
+            }
+        ],
+        [
+            %{
+                key: "private_status",
+                value: "public"
+            }
+        ]
+    ]
+  }
+  ```
+
+  ```elixir
+  Media.Context.get_medias(%{filters: [[%{key: "number_of_contents", value: 10, operation: "<" }]]})
+  Media.Context.get_medias(%{filters: [[%{key: "id", value: 134}]]})
+  Media.Context.get_medias(%{filters: [[%{key: "number_of_contents", value: 5, operation: ">" }, %{key: "type", value: "image"}]]})
   ```
   Available operations are: `<`, `>`, `<>`, `between`, `=`, `<=` and `>=`.
 
@@ -184,20 +213,38 @@ defmodule Media.Context do
   end
 
   @doc """
-  Updates a `media`
+  Updates a `media`.
+
+  The files update is a complete update and not a partial one. If you would like to keep the old files and add to them you just need to supply the file id you want to keep.
+
 
   Usage:
 
-  You can update `media` by calling the following function
+  You can update `media` by calling the following function if you want to upload new files.
 
   ```elixir
-  Media.Context.insert_media(
+  Media.Context.update_media(
     %{
       title: "Media title",
       author: "AUTHOR_ID",
       tags: ["technology"],
       type: "image",
       files: [%Plug.Upload{path: "path/to/file", filename: "image/image.png", content_type: "image/png"}],
+      locked_status: "locked",
+      private_status: "public",
+    }
+  )
+  ```
+    You can update `media` by calling the following function if you want to add new files to existing ones.
+
+  ```elixir
+  Media.Context.update_media(
+    %{
+      title: "Media title",
+      author: "AUTHOR_ID",
+      tags: ["technology"],
+      type: "image",
+      files: [%{file_id: "hacmnzxiuh123ad"}, %Plug.Upload{path: "path/to/file", filename: "image/image.png", content_type: "image/png"}],
       locked_status: "locked",
       private_status: "public",
     }
@@ -317,19 +364,19 @@ defmodule Media.Context do
   ```elixir
   Media.Context.list_platforms(%{sort: %{id: "desc"}}) ## [desc DESC ASC asc] are accepted
   ```
+  The same filtering rules used for listing medias.
 
   Listing all available platforms filtered:
-
   ```elixir
-  Media.Context.list_platforms(%{filters: [%{key: "number_of_medias", value: 10, operation: "<" }]})
-  Media.Context.list_platforms(%{filters: [%{key: "id", value: 134}]})
-  Media.Context.list_platforms(%{filters: [%{key: "number_of_medias", value: 5, operation: ">" }, %{key: "name", value: "name of platform"}]})
+  Media.Context.list_platforms(%{filters: [[%{key: "number_of_medias", value: 10, operation: "<" }]]})
+  Media.Context.list_platforms(%{filters: [[%{key: "id", value: 134}], [%{key: "name", value: "mobile"}]]})
+  Media.Context.list_platforms(%{filters: [[%{key: "number_of_medias", value: 5, operation: ">" }, %{key: "name", value: "name of platform"}]]})
   ```
   Available operations are: `<`, `>`, `<>`, `between`, `=`, `<=` and `>=`.
 
   Default operation is `=`.
 
-  Filters can be combined together
+  Filters can be combined together.
 
   Returns possibilities
   ```elixir
@@ -346,7 +393,7 @@ defmodule Media.Context do
   end
 
   @doc """
-  Updates a `media`
+  Updates a `platform`
 
   Usage:
 
@@ -362,7 +409,7 @@ defmodule Media.Context do
   )
   ```
   Returns possibilities
-  - ``{:ok, media}``
+  - ``{:ok, platform}``
   - ``{:error, changeset}``
   """
   def update_platform(args, opts \\ %{return_type: :struct}) do
