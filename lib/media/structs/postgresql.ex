@@ -17,7 +17,7 @@ defmodule Media.PostgreSQL do
     import Ecto.Query, warn: true
 
     def content_medias(%{args: id}) when is_integer(id) do
-      query_content_medias(id)
+      {:ok, query_content_medias(id)}
     end
 
     def content_medias(%{args: id}) when is_binary(id) do
