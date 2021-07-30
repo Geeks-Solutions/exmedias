@@ -125,9 +125,10 @@ defmodule Media.S3Manager do
           ## because the ETag is the hash of the object
           ## so in case we upload two files on the same media we will have the same ETag
           #  thus adding a random string at the end would be enough
+
           {:ok,
            %{
-             id: id <> String.slice(UUID.uuid4(:hex), 1..5),
+             id: (id |> String.replace("\"", "")) <> String.slice(UUID.uuid4(:hex), 1..5),
              filename: name,
              url: url,
              bucket: bucket

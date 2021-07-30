@@ -217,10 +217,17 @@ defmodule MediaWeb.MediaControllerTest do
       test_delete_invalid_id()
     end
 
-    test "Put /media updates a media", %{conn: _conn} do
+    test "Put /media updates a media (same files)", %{conn: _conn} do
       TestHelpers.set_repo(Media.Repo, "postgreSQL")
 
       test_update_media()
+    end
+
+    test "Put /media returns erro when providing the wrong file id", %{conn: _conn} do
+      TestHelpers.set_repo(Media.Repo, "postgreSQL")
+
+      test_update_media_wrong_file_ids()
+      # assert true
     end
 
     test "Put /media updates a media update the files", %{conn: _conn} do
@@ -362,10 +369,17 @@ defmodule MediaWeb.MediaControllerTest do
       test_delete_media_used()
     end
 
-    test "Put /media/:id updates a media", %{conn: _conn} do
+    test "Put /media/:id updates a media (same files)", %{conn: _conn} do
       TestHelpers.set_repo(:mongo, "mongoDB")
 
       test_update_media()
+    end
+
+    test "Put /media returns erro when providing the wrong file id", %{conn: _conn} do
+      TestHelpers.set_repo(:mongo, "mongoDB")
+
+      test_update_media_wrong_file_ids()
+      # assert true
     end
 
     test "PUT /media/:id returns error when invalid data", %{conn: _conn} do
@@ -747,7 +761,9 @@ defmodule MediaWeb.MediaControllerTest do
         TestHelpers.routes().media_path(conn1, :update_media),
         @update_attrs
         |> Map.put("id", id)
-        |> Map.put("files", %{"1" => resp["files"] |> Enum.at(0)})
+        |> Map.put("files", %{
+          "1" => %{"file_id" => resp["files"] |> Enum.at(0) |> Map.get("file_id")}
+        })
       )
 
     assert resp = json_response(conn1, 200)
@@ -767,6 +783,34 @@ defmodule MediaWeb.MediaControllerTest do
     ## did update with the same files
     assert_called_exactly(S3Manager.upload_file(:_, :_), 2)
     assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 2)
+  end
+
+  def test_update_media_wrong_file_ids do
+    conn = create_media()
+
+    assert resp = json_response(conn, 200)
+    id = resp["id"]
+
+    assert_called_exactly(S3Manager.upload_file(:_, :_), 2)
+    assert_called_exactly(S3Manager.upload_thumbnail(:_, :_), 2)
+
+    assert @valid_attrs |> Map.put("id", id) |> Map.put("number_of_contents", 0) ==
+             resp |> Map.delete("files")
+
+    conn1 = build_conn()
+
+    conn1 =
+      put(
+        conn1,
+        TestHelpers.routes().media_path(conn1, :update_media),
+        @update_attrs
+        |> Map.put("id", id)
+        |> Map.put("files", %{
+          "1" => %{"file_id" => "invalid id"}
+        })
+      )
+
+    assert %{"errors" => %{"files" => _}} = json_response(conn1, 422)
   end
 
   def test_update_media_files do

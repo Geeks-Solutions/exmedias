@@ -448,9 +448,27 @@ defmodule Media.Helpers do
   def binary_is_integer?(:error), do: false
   def binary_is_integer?({_duration, _}), do: true
 
+  def convert_to_object_id(id) when is_binary(id) do
+    ObjectId.decode!(id)
+  end
+
+  def convert_to_object_id(id) do
+    id
+  end
+
+  def convert_from_object_id(id) when is_binary(id) do
+    id
+  end
+
+  def convert_from_object_id(id) do
+    ObjectId.encode!(id)
+  end
+
   def valid_object_id?(id) when is_binary(id) do
     String.match?(id, ~r/^[0-9a-f]{24}$/)
   end
+
+  def valid_object_id?(%ObjectId{}), do: true
 
   def valid_object_id?(_id), do: false
 
@@ -491,9 +509,9 @@ defmodule Media.Helpers do
 
     type = changeset |> get_field(:type)
 
-    old_ids = old_files |> Enum.map(&Map.get(&1, :file_id))
+    # old_ids = old_files |> Enum.map(&Map.get(&1, :file_id))
 
-    case files_transaction(new_files, old_ids, %{privacy: privacy, type: type}) do
+    case files_transaction(new_files, old_files, %{privacy: privacy, type: type}) do
       {:ok, []} ->
         # if no new files are provided
         # then we don't want to update them so we keep the old files intact
@@ -573,13 +591,13 @@ defmodule Media.Helpers do
         end)
   end
 
-  def files_transaction(new_files, _old_ids, %{type: type, privacy: privacy}) do
+  def files_transaction(new_files, old_files, %{type: type, privacy: privacy}) do
     Enum.reduce(new_files, {[], [], true, ""}, fn
       _file, {files, changes, false, error} ->
         {files, changes, false, error}
 
       file, {files, changes, true, _error} ->
-        case upload_file(file, type, privacy) do
+        case upload_file(file, old_files, type, privacy) do
           {:ok, new_file, new_changes} ->
             {files ++ [new_file], changes ++ new_changes, true, ""}
 
@@ -617,11 +635,17 @@ defmodule Media.Helpers do
   def convert_base64_to_file(_base64_file),
     do: {:error, gettext("The file sent is not a base64 file")}
 
-  def upload_file(%{file_id: _file_id} = file, _type, _privacy), do: {:ok, file, []}
+  def upload_file(%{file_id: file_id}, old_files, _type, _privacy) do
+    case Enum.find(old_files, &(&1 |> Map.get(:file_id) == file_id)) do
+      nil -> {:error, gettext("The file ID provided is incorrect"), []}
+      old_file -> {:ok, old_file, []}
+    end
+  end
 
   ## base64_file should be a string
   def upload_file(
         %{base64: true, file: base64_file} = file,
+        _old_files,
         "image",
         privacy
       ) do
@@ -637,15 +661,23 @@ defmodule Media.Helpers do
   def upload_file(
         %{file: %Plug.Upload{path: _path, content_type: "image/" <> _imagetype} = _file} =
           new_file,
+        _oldfiles,
         "image",
         privacy
       ) do
     upload_image(new_file, privacy)
   end
 
-  def upload_file(%{file: %{url: _url}} = file, "video", _privacy) do
+  def upload_file(%{file: %{url: _url}} = file, _old_files, "video", _privacy) do
     handle_youtube_video(file)
   end
+
+  def upload_file(_, _, _, _privacy),
+    do:
+      {:error,
+       gettext(
+         "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
+       ), []}
 
   def upload_image(%{file: %{path: path} = file} = new_file, privacy) do
     with {:ok, %{size: size}} <- File.stat(path),
@@ -676,13 +708,6 @@ defmodule Media.Helpers do
       {:error, err} -> {:error, err, []}
     end
   end
-
-  def upload_file(_, _, _privacy),
-    do:
-      {:error,
-       gettext(
-         "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
-       ), []}
 
   def youtube_endpoint do
     "https://www.googleapis.com/youtube/v3"

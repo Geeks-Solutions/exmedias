@@ -187,10 +187,11 @@ defmodule Media.MongoDB.Schema do
             provided_fields
             |> Enum.all?(&(&1 in required_fields and valid_value(&1, file |> Map.get(&1)))) and
               :erlang.length(provided_fields) == :erlang.length(required_fields)},
-         platform_id <- Map.get(file, :platform_id),
+         platform_id <- Map.get(file, :platform_id, ""),
          {:platforms, true} <-
-           {:platforms, platform_id in available_platforms_ids()} do
-      {true, file |> Map.put(:platform_id, ObjectId.decode!(platform_id))}
+           {:platforms,
+            (platform_id |> Helpers.convert_from_object_id()) in available_platforms_ids()} do
+      {true, file |> Map.put(:platform_id, platform_id |> Helpers.convert_to_object_id())}
     else
       {:keys, false} ->
         {false,
