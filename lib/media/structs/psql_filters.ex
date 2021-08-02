@@ -114,7 +114,7 @@ defmodule Media.FiltersPostgreSQL do
 
   # =, <, >, <=, >=, <>
   def add_computed_condition(_query, %{"number_of_contents" => value}, op) do
-    operation = op["number_of_contents"]["operation"]
+    operation = op["number_of_contents"] |> Map.get("operation", "=")
     value = if is_binary(value), do: value |> String.to_integer(), else: value
 
     case operation do

@@ -3,6 +3,8 @@ defmodule Media.PostgreSQL do
   alias Media.FiltersPostgreSQL
   alias Media.Helpers
   import Ecto.Query
+  import MediaWeb.Gettext
+
   defstruct args: []
 
   defimpl DB, for: Media.PostgreSQL do
@@ -23,7 +25,7 @@ defmodule Media.PostgreSQL do
     def content_medias(%{args: id}) when is_binary(id) do
       case Integer.parse(id) do
         :error ->
-          {:error, "invalid_id"}
+          {:error, gettext("invalid ID")}
 
         {id, _} ->
           {:ok, query_content_medias(id)}
@@ -210,7 +212,7 @@ defmodule Media.PostgreSQL do
     defp get_platform_by_id(id) do
       Helpers.repo().get(Platform, id)
       |> case do
-        nil -> {:error, :not_found, "Platform"}
+        nil -> {:error, :not_found, gettext("Platform does not exist")}
         media -> {:ok, media}
       end
     end
@@ -247,7 +249,7 @@ defmodule Media.PostgreSQL do
     def get_platform(%{args: platform_id}) do
       with {true, platform_id} <- Helpers.valid_postgres_id?(platform_id),
            nil <- get_full_platform(platform_id) do
-        {:error, :not_found, "Platform does not exist"}
+        {:error, :not_found, gettext("Platform does not exist")}
       else
         {false, -1} -> {:error, Helpers.id_error_message(platform_id)}
         platform -> {:ok, platform}
@@ -259,7 +261,7 @@ defmodule Media.PostgreSQL do
     def update_platform(%{args: %{"id" => _id} = params}),
       do: update_platform_common(%{args: params})
 
-    def update_platform(%{args: _params}), do: {:error, "Please provide an ID"}
+    def update_platform(%{args: _params}), do: {:error, gettext("Please provide an ID")}
 
     def update_platform_common(%{args: params}) do
       case get_platform_by_id(Helpers.extract_param(params, :id)) do
@@ -293,7 +295,7 @@ defmodule Media.PostgreSQL do
       |> Helpers.repo().delete_all()
       |> case do
         {1, nil} -> {:ok, "Platform with id #{platform_id} deleted successfully"}
-        {0, nil} -> {:error, :not_found, "Platform does not exist"}
+        {0, nil} -> {:error, :not_found, gettext("Platform does not exist")}
       end
     end
 
