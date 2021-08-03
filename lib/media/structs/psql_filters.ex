@@ -193,7 +193,7 @@ defmodule Media.FiltersPostgreSQL do
   defp height_op(value, dynamic, op) do
     operation = get_op(op, "height")
 
-    case operation |> Map.get("operation", "=") do
+    case operation |> Map.get("operation") || "=" do
       "=" ->
         dynamic([p], ^dynamic and fragment("? = ?", p.height, ^value))
 
@@ -202,14 +202,11 @@ defmodule Media.FiltersPostgreSQL do
 
       ">" ->
         dynamic([p], ^dynamic and fragment("? > ?", p.height, ^value))
-
-      _op ->
-        rest_height_ops(value, dynamic, operation)
     end
   end
 
   def rest_height_ops(value, dynamic, op) do
-    case op |> Map.get("operation", "=") do
+    case op |> Map.get("operation") || "=" do
       "<=" ->
         dynamic([p], ^dynamic and fragment("? <= ?", p.height, ^value))
 
@@ -218,13 +215,16 @@ defmodule Media.FiltersPostgreSQL do
 
       operation when operation in ["between", "<>"] ->
         dynamic_between_height(op)
+
+      _ ->
+        dynamic([p], ^dynamic)
     end
   end
 
   defp width_op(value, dynamic, op) do
     operation = get_op(op, "width")
 
-    case operation |> Map.get("operation", "=") do
+    case operation |> Map.get("operation") || "=" do
       "=" ->
         dynamic([p], ^dynamic and fragment("? = ?", p.width, ^value))
 
@@ -240,7 +240,7 @@ defmodule Media.FiltersPostgreSQL do
   end
 
   def rest_width_ops(value, dynamic, op) do
-    case op |> Map.get("operation", "=") do
+    case op |> Map.get("operation") || "=" do
       "<=" ->
         dynamic([p], ^dynamic and fragment("? <= ?", p.width, ^value))
 
