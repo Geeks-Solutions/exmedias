@@ -253,8 +253,8 @@ defmodule Media.FiltersPostgreSQL do
   end
 
   def dynamic_between_height(op) do
-    from = get_op(op, "height") |> Map.get("from", "0") |> Helpers.binary_to_integer()
-    to = get_op(op, "height") |> Map.get("to", "0") |> Helpers.binary_to_integer()
+    from = op |> Map.get("from", "0") |> Helpers.binary_to_integer()
+    to = op |> Map.get("to", "0") |> Helpers.binary_to_integer()
 
     dynamic(
       [p],
@@ -269,8 +269,8 @@ defmodule Media.FiltersPostgreSQL do
   end
 
   def dynamic_between_width(op) do
-    from = get_op(op, "width") |> Map.get("from", "0") |> Helpers.binary_to_integer()
-    to = get_op(op, "width") |> Map.get("to", "0") |> Helpers.binary_to_integer()
+    from = op |> Map.get("from", "0") |> Helpers.binary_to_integer()
+    to = op |> Map.get("to", "0") |> Helpers.binary_to_integer()
 
     dynamic(
       [p],
