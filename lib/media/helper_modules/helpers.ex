@@ -278,8 +278,9 @@ defmodule Media.Helpers do
   def extract_param(args, key, default) when key |> is_binary and args |> is_map,
     do: Map.get(args, key |> String.to_atom()) || Map.get(args, key) || default
 
-  def extract_param(args, key, default) when key |> is_atom and args |> is_map,
-    do: Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
+  def extract_param(args, key, default) when key |> is_atom and args |> is_map do
+    Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
+  end
 
   def extract_param(_args, _key, default),
     do: default
@@ -394,13 +395,14 @@ defmodule Media.Helpers do
     op = extract_param(filter, :operation)
     val = extract_param(filter, :value)
     val2 = extract_param(filter, :value2)
+    between_ops = ["between", "<>"]
 
-    if op == "between" and (val == nil or val2 == nil) do
+    if op in between_ops and (val == nil or val2 == nil) do
       {"error", val}
     else
-      if op != "between",
-        do: {%{"operation" => op}, val},
-        else: {%{"operation" => op, "from" => val, "to" => val2}, val}
+      if op in between_ops,
+        do: {%{"operation" => op, "from" => val, "to" => val2}, val},
+        else: {%{"operation" => op}, val}
     end
   end
 
@@ -452,6 +454,14 @@ defmodule Media.Helpers do
 
   def binary_is_integer?(:error), do: false
   def binary_is_integer?({_duration, _}), do: true
+
+  def binary_to_integer(number) when is_integer(number), do: number
+
+  def binary_to_integer(number) when is_binary(number) do
+    parsed = Integer.parse(number)
+    integer? = binary_is_integer?(parsed)
+    if integer?, do: parsed |> elem(0), else: 0
+  end
 
   def convert_to_object_id(id) when is_binary(id) do
     ObjectId.decode!(id)
