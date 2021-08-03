@@ -202,6 +202,9 @@ defmodule Media.FiltersPostgreSQL do
 
       ">" ->
         dynamic([p], ^dynamic and fragment("? > ?", p.height, ^value))
+
+      _op ->
+        rest_height_ops(value, dynamic, operation)
     end
   end
 
