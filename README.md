@@ -99,14 +99,20 @@ Now you are all set to start using Media. 🎉
 #### MongoDB Based Project
 ```elixir
 config :media,
-  otp_app: :sections,
+  otp_app: :your_app,
   active_database: "mongoDB",
   repo: :mongo,
-  router: SectionsWeb.Router,
-  aws_bucket_name: "eweevtestbucketprivate",
-  aws_role_name: "privateBucketRead",
-  aws_region: "us-east-1",
-  aws_iam_id: "403016165142"
+  router: YourApp.Router,
+  aws_bucket_name: "bucket_name",
+  aws_role_name: "role_name",
+  ## the IAM user id,
+  # aws_user_id: "403016165142",
+  content_schema: YourApp.ContentSchema,
+  content_table: "content_table",
+  aws_iam_id: "403016165142",
+  aws_access_key_id: "AKIAV3V******",
+  aws_secret_key: "VoF7GeKJh6A2On******",
+  youtube_api_key: "AIzaSyBwQKaa*******"
 ```
 ``active_database``: the database your project is using accepted values are: "mongoDB" or "postgreSQL"
 ``repo``: The mongodb application name or the repo module in case it's a postgreSQL based project i.e ``YourApp.Repo``.
@@ -114,7 +120,10 @@ config :media,
 ``content_table``: Your content table name.
 `aws_role_name`: In AWS, you can create roles (`IAM` roles) that has certain permission. This role will be assumed in order to authenticate the access to private files
 `aws_iam_id`: The IAM user ID.
+`youtube_api_key`: The youtube api key to fetch videos details.
   In case your project relies on a ``MongoDB``, in your  ``application.ex`` file add this tuple to the children list inside the ``start`` function:
+
+*NOTE: for AWS and Youtube credentials check the S3Manager Module*
 
 In your ``application.ex``, add the following to `children` processes that will be supervised in your `start` function:
 

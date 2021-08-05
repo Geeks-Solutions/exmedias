@@ -57,6 +57,14 @@ defmodule Media.S3Manager do
       aws_role_name: "role_test",
       aws_bucket_name: "eweevtestbucketprivate"
     ```
+  ### How to create your Youtube API key.
+  1. Log in to [Google Developers Console](https://console.cloud.google.com/apis/dashboard).
+  2. Create a new project.
+  3. On the new project dashboard, click Explore & Enable APIs.
+  4. In the library, navigate to YouTube Data API v3 under YouTube APIs.
+  5. Enable the API.
+  6. Create a credential.
+  7. A screen will appear with the API key.
   """
   alias ExAws.{S3, S3.Upload, STS}
   alias Media.Helpers
@@ -125,9 +133,10 @@ defmodule Media.S3Manager do
           ## because the ETag is the hash of the object
           ## so in case we upload two files on the same media we will have the same ETag
           #  thus adding a random string at the end would be enough
+
           {:ok,
            %{
-             id: id <> String.slice(UUID.uuid4(:hex), 1..5),
+             id: (id |> String.replace("\"", "")) <> String.slice(UUID.uuid4(:hex), 1..5),
              filename: name,
              url: url,
              bucket: bucket

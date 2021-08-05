@@ -17,7 +17,7 @@ defmodule Media.MongoDB do
         %{result: result} =
           list_medias(%MongoDB{args: %{filters: [[%{key: "contents_used", value: id}]]}})
 
-        result
+        {:ok, result}
       else
         {:error, "Invalid id"}
       end
@@ -283,7 +283,9 @@ defmodule Media.MongoDB do
     end
 
     def get(%MongoDB{args: id}, collection) do
-      case Mongo.find_one(:mongo, collection, %{_id: ObjectId.decode!(id)}) do
+      case Mongo.find_one(:mongo, collection, %{
+             _id: Helpers.convert_to_object_id(id)
+           }) do
         nil ->
           {:error, :not_found, collection |> String.capitalize()}
 

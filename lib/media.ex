@@ -29,7 +29,7 @@ defmodule Media do
 
   #### PostgreSQL Based Project
 
-  If your project is connected to a ``PostgreSQL`` project then you should follow the below steps, if it is connect to ``MongoDB`` then jump to the next section.
+  If your project is connected to a ``PostgreSQL`` project then you should follow the below steps, if it is connected to ``MongoDB`` then jump to the next section.
 
   Now in your ``config.exs`` add the following:
 

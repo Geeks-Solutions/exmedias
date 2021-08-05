@@ -136,8 +136,13 @@ defmodule MediaWeb.MediaController do
   end
 
   def content_medias(conn, %{"content_id" => id}) do
-    medias = Context.content_medias(id)
-    render(conn, "medias.json", medias: medias)
+    case Context.content_medias(id) do
+      {:ok, medias} ->
+        render(conn, "medias.json", medias: medias)
+
+      {:error, error} ->
+        render(conn |> put_status(400), "error.json", error: error)
+    end
   end
 
   @doc """

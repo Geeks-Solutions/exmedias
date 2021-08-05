@@ -1,6 +1,6 @@
 defmodule Media.FiltersPostgreSQL do
   @moduledoc false
-  # alias Media.Helpers
+  alias Media.Helpers
   # alias Media.PostgreSQL
   @computed_filters ["number_of_contents"]
   # @computed_filters []
@@ -114,7 +114,7 @@ defmodule Media.FiltersPostgreSQL do
 
   # =, <, >, <=, >=, <>
   def add_computed_condition(_query, %{"number_of_contents" => value}, op) do
-    operation = op["number_of_contents"]["operation"]
+    operation = op["number_of_contents"] |> Map.get("operation", "=")
     value = if is_binary(value), do: value |> String.to_integer(), else: value
 
     case operation do
@@ -125,13 +125,13 @@ defmodule Media.FiltersPostgreSQL do
         dynamic([p, m, c, joint_table], fragment("COUNT(?) < ?", joint_table.content_id, ^value))
 
       ">" ->
-        dynamic([p, m, c, joint_table], fragment("COUNT(?) < ?", joint_table.content_id, ^value))
+        dynamic([p, m, c, joint_table], fragment("COUNT(?) > ?", joint_table.content_id, ^value))
 
       "<=" ->
-        dynamic([p, m, c, joint_table], fragment("COUNT(?) < ?", joint_table.content_id, ^value))
+        dynamic([p, m, c, joint_table], fragment("COUNT(?) <= ?", joint_table.content_id, ^value))
 
       ">=" ->
-        dynamic([p, m, c, joint_table], fragment("COUNT(?) < ?", joint_table.content_id, ^value))
+        dynamic([p, m, c, joint_table], fragment("COUNT(?) >= ?", joint_table.content_id, ^value))
 
       "<>" ->
         dynamic_between(op)
@@ -142,8 +142,8 @@ defmodule Media.FiltersPostgreSQL do
   end
 
   defp dynamic_between(op) do
-    from = Map.get(op["number_of_contents"], "from", "0") |> Integer.parse() |> elem(0)
-    to = Map.get(op["number_of_contents"], "to", "0") |> Integer.parse() |> elem(0)
+    from = Map.get(op["number_of_contents"], "from", "0") |> Helpers.binary_to_integer()
+    to = Map.get(op["number_of_contents"], "to", "0") |> Helpers.binary_to_integer()
 
     dynamic(
       [p, c, m, joint_table],
@@ -179,22 +179,118 @@ defmodule Media.FiltersPostgreSQL do
         ## to do check if the dates need more processing
         number_of_medias_op(value, dynamic, op)
 
+      %{"height" => value}, dynamic ->
+        height_op(value, dynamic, op)
+
+      %{"width" => value}, dynamic ->
+        width_op(value, dynamic, op)
+
       in_table, dynamic ->
         in_table(in_table, dynamic, op)
     end)
   end
 
+  defp height_op(value, dynamic, op) do
+    operation = get_op(op, "height")
+
+    case operation |> Map.get("operation") || "=" do
+      "=" ->
+        dynamic([p], ^dynamic and fragment("? = ?", p.height, ^value))
+
+      "<" ->
+        dynamic([p], ^dynamic and fragment("? < ?", p.height, ^value))
+
+      ">" ->
+        dynamic([p], ^dynamic and fragment("? > ?", p.height, ^value))
+
+      _op ->
+        rest_height_ops(value, dynamic, operation)
+    end
+  end
+
+  def rest_height_ops(value, dynamic, op) do
+    case op |> Map.get("operation") || "=" do
+      "<=" ->
+        dynamic([p], ^dynamic and fragment("? <= ?", p.height, ^value))
+
+      ">=" ->
+        dynamic([p], ^dynamic and fragment("? >= ?", p.height, ^value))
+
+      operation when operation in ["between", "<>"] ->
+        dynamic_between_height(op)
+
+      _ ->
+        dynamic([p], ^dynamic)
+    end
+  end
+
+  defp width_op(value, dynamic, op) do
+    operation = get_op(op, "width")
+
+    case operation |> Map.get("operation") || "=" do
+      "=" ->
+        dynamic([p], ^dynamic and fragment("? = ?", p.width, ^value))
+
+      "<" ->
+        dynamic([p], ^dynamic and fragment("? < ?", p.width, ^value))
+
+      ">" ->
+        dynamic([p], ^dynamic and fragment("? > ?", p.width, ^value))
+
+      _op ->
+        rest_width_ops(value, dynamic, operation)
+    end
+  end
+
+  def rest_width_ops(value, dynamic, op) do
+    case op |> Map.get("operation") || "=" do
+      "<=" ->
+        dynamic([p], ^dynamic and fragment("? <= ?", p.width, ^value))
+
+      ">=" ->
+        dynamic([p], ^dynamic and fragment("? >= ?", p.width, ^value))
+
+      operation when operation in ["between", "<>"] ->
+        dynamic_between_width(op)
+    end
+  end
+
+  def dynamic_between_height(op) do
+    from = op |> Map.get("from", "0") |> Helpers.binary_to_integer()
+    to = op |> Map.get("to", "0") |> Helpers.binary_to_integer()
+
+    dynamic(
+      [p],
+      fragment(
+        "? > ? and ? < ?",
+        p.height,
+        ^from,
+        p.height,
+        ^to
+      )
+    )
+  end
+
+  def dynamic_between_width(op) do
+    from = op |> Map.get("from", "0") |> Helpers.binary_to_integer()
+    to = op |> Map.get("to", "0") |> Helpers.binary_to_integer()
+
+    dynamic(
+      [p],
+      fragment(
+        "? > ? and ? < ?",
+        p.width,
+        ^from,
+        p.width,
+        ^to
+      )
+    )
+  end
+
   defp number_of_medias_op(value, dynamic, op) do
-    op =
-      Enum.find(op, fn
-        %{"number_of_medias" => _op} -> true
-        _ -> false
-      end)
-      |> Map.get("number_of_medias")
+    operation = get_op(op, "number_of_medias")
 
-    operation = op |> Map.get("operation", ">=")
-
-    case operation do
+    case operation |> Map.get("operation") do
       "=" ->
         dynamic(
           [p, s],
@@ -207,13 +303,13 @@ defmodule Media.FiltersPostgreSQL do
           ^dynamic and fragment("COALESCE(?, 0) > ?::bigint", s.number_of_medias, ^value)
         )
 
-      val ->
-        number_of_medias_op_eq(value, dynamic, val)
+      _val ->
+        number_of_medias_op_eq(value, dynamic, operation)
     end
   end
 
   defp number_of_medias_op_eq(value, dynamic, operation) do
-    case operation do
+    case operation |> Map.get("operation") do
       ">=" ->
         dynamic(
           [p, s],
@@ -232,14 +328,14 @@ defmodule Media.FiltersPostgreSQL do
           ^dynamic and fragment("COALESCE(?, 0) <= ?::bigint", s.number_of_medias, ^value)
         )
 
-      _val ->
+      val when val in ["between", "<>"] ->
         handle_rest_of_operations(value, dynamic, operation)
     end
   end
 
-  def handle_rest_of_operations(_value, dynamic, op) when op in ["between", "<>"] do
-    {from, _} = Map.get(op, "from") |> Float.parse()
-    {to, _} = Map.get(op, "to") |> Float.parse()
+  def handle_rest_of_operations(_value, dynamic, op) do
+    from = op |> Map.get("from", "0") |> Helpers.binary_to_integer()
+    to = op |> Map.get("to", "0") |> Helpers.binary_to_integer()
 
     dynamic(
       [p, s],
@@ -283,4 +379,11 @@ defmodule Media.FiltersPostgreSQL do
   #       duration |> Float.to_string()
   #   end
   # end
+  defp get_op(op, field) do
+    Enum.find(op, fn
+      %{^field => _op} -> true
+      _ -> false
+    end)
+    |> Map.get(field, %{})
+  end
 end

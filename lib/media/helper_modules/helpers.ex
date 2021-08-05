@@ -35,7 +35,12 @@ defmodule Media.Helpers do
     Please make sure to provide a configuration for aws. e.g:
       config :media,
         aws_access_key_id: your_access_key_id,
-        aws_secret_key: secret_access_key
+        aws_secret_key: your_secret_access_key,
+        aws_role_name: your_role_name,
+        aws_iam_id: your_aws_iam_id,
+        aws_bucket_name: your_aws_bucket_name
+
+    If you are not sure how to get these values, please head to our documentation and check the S3Manager module.
     ")
     [access_key_id: aws_key, secret_access_key: aws_secret_key, region: region]
   end
@@ -273,8 +278,9 @@ defmodule Media.Helpers do
   def extract_param(args, key, default) when key |> is_binary and args |> is_map,
     do: Map.get(args, key |> String.to_atom()) || Map.get(args, key) || default
 
-  def extract_param(args, key, default) when key |> is_atom and args |> is_map,
-    do: Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
+  def extract_param(args, key, default) when key |> is_atom and args |> is_map do
+    Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
+  end
 
   def extract_param(_args, _key, default),
     do: default
@@ -389,13 +395,14 @@ defmodule Media.Helpers do
     op = extract_param(filter, :operation)
     val = extract_param(filter, :value)
     val2 = extract_param(filter, :value2)
+    between_ops = ["between", "<>"]
 
-    if op == "between" and (val == nil or val2 == nil) do
+    if op in between_ops and (val == nil or val2 == nil) do
       {"error", val}
     else
-      if op != "between",
-        do: {%{"operation" => op}, val},
-        else: {%{"operation" => op, "from" => val, "to" => val2}, val}
+      if op in between_ops,
+        do: {%{"operation" => op, "from" => val, "to" => val2}, val},
+        else: {%{"operation" => op}, val}
     end
   end
 
@@ -448,9 +455,35 @@ defmodule Media.Helpers do
   def binary_is_integer?(:error), do: false
   def binary_is_integer?({_duration, _}), do: true
 
+  def binary_to_integer(number) when is_integer(number), do: number
+
+  def binary_to_integer(number) when is_binary(number) do
+    parsed = Integer.parse(number)
+    integer? = binary_is_integer?(parsed)
+    if integer?, do: parsed |> elem(0), else: 0
+  end
+
+  def convert_to_object_id(id) when is_binary(id) do
+    ObjectId.decode!(id)
+  end
+
+  def convert_to_object_id(id) do
+    id
+  end
+
+  def convert_from_object_id(id) when is_binary(id) do
+    id
+  end
+
+  def convert_from_object_id(id) do
+    ObjectId.encode!(id)
+  end
+
   def valid_object_id?(id) when is_binary(id) do
     String.match?(id, ~r/^[0-9a-f]{24}$/)
   end
+
+  def valid_object_id?(%ObjectId{}), do: true
 
   def valid_object_id?(_id), do: false
 
@@ -491,9 +524,9 @@ defmodule Media.Helpers do
 
     type = changeset |> get_field(:type)
 
-    old_ids = old_files |> Enum.map(&Map.get(&1, :file_id))
+    # old_ids = old_files |> Enum.map(&Map.get(&1, :file_id))
 
-    case files_transaction(new_files, old_ids, %{privacy: privacy, type: type}) do
+    case files_transaction(new_files, old_files, %{privacy: privacy, type: type}) do
       {:ok, []} ->
         # if no new files are provided
         # then we don't want to update them so we keep the old files intact
@@ -505,6 +538,7 @@ defmodule Media.Helpers do
         new_files_ids = new_files |> Enum.map(& &1.file_id)
 
         ## delete unused files
+
         Enum.filter(old_files, &(Map.get(&1, :file_id) not in new_files_ids))
         |> delete_file_and_thumbnail()
 
@@ -572,13 +606,13 @@ defmodule Media.Helpers do
         end)
   end
 
-  def files_transaction(new_files, _old_ids, %{type: type, privacy: privacy}) do
+  def files_transaction(new_files, old_files, %{type: type, privacy: privacy}) do
     Enum.reduce(new_files, {[], [], true, ""}, fn
       _file, {files, changes, false, error} ->
         {files, changes, false, error}
 
       file, {files, changes, true, _error} ->
-        case upload_file(file, type, privacy) do
+        case upload_file(file, old_files, type, privacy) do
           {:ok, new_file, new_changes} ->
             {files ++ [new_file], changes ++ new_changes, true, ""}
 
@@ -616,11 +650,17 @@ defmodule Media.Helpers do
   def convert_base64_to_file(_base64_file),
     do: {:error, gettext("The file sent is not a base64 file")}
 
-  def upload_file(%{file_id: _file_id} = file, _type, _privacy), do: {:ok, file, []}
+  def upload_file(%{file_id: file_id}, old_files, _type, _privacy) do
+    case Enum.find(old_files, &(&1 |> Map.get(:file_id) == file_id)) do
+      nil -> {:error, gettext("The file ID provided is incorrect"), []}
+      old_file -> {:ok, old_file, []}
+    end
+  end
 
   ## base64_file should be a string
   def upload_file(
         %{base64: true, file: base64_file} = file,
+        _old_files,
         "image",
         privacy
       ) do
@@ -636,15 +676,23 @@ defmodule Media.Helpers do
   def upload_file(
         %{file: %Plug.Upload{path: _path, content_type: "image/" <> _imagetype} = _file} =
           new_file,
+        _oldfiles,
         "image",
         privacy
       ) do
     upload_image(new_file, privacy)
   end
 
-  def upload_file(%{file: %{url: _url}} = file, "video", _privacy) do
+  def upload_file(%{file: %{url: _url}} = file, _old_files, "video", _privacy) do
     handle_youtube_video(file)
   end
+
+  def upload_file(_, _, _, _privacy),
+    do:
+      {:error,
+       gettext(
+         "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
+       ), []}
 
   def upload_image(%{file: %{path: path} = file} = new_file, privacy) do
     with {:ok, %{size: size}} <- File.stat(path),
@@ -675,13 +723,6 @@ defmodule Media.Helpers do
       {:error, err} -> {:error, err, []}
     end
   end
-
-  def upload_file(_, _, _privacy),
-    do:
-      {:error,
-       gettext(
-         "The file structure/type you provided is not supported. Hint: Make sure to provide a new file upload or an existing file URL."
-       ), []}
 
   def youtube_endpoint do
     "https://www.googleapis.com/youtube/v3"
@@ -921,4 +962,20 @@ defmodule Media.Helpers do
   defp get_platform(id) do
     Context.get_platform(id)
   end
+
+  def render(structs, opts \\ %{return_type: :struct})
+  def render(data, %{return_type: :struct}), do: data
+
+  def render(structs, %{return_type: :map}) when is_list(structs),
+    do: Enum.map(structs, &render(&1))
+
+  def render(struct, %{return_type: :map}) when is_struct(struct) do
+    ## transforms a struct to a json
+    struct |> Map.delete(:__struct__) |> Map.delete(:__meta__)
+    ## transforms a json to an elixir map with atom keys
+    # {:ok, media} = media |> Jason.decode(keys: :atoms)
+    # media
+  end
+
+  def render(data, _), do: data
 end

@@ -35,8 +35,14 @@ defmodule Media.Context do
   ```
   """
 
-  def insert_media(args) do
-    DB.insert_media(Helpers.db_struct(args))
+  def insert_media(args, opts \\ %{}) do
+    case DB.insert_media(Helpers.db_struct(args)) do
+      {:ok, media} ->
+        {:ok, media |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+
+      {:error, _} = err ->
+        err
+    end
   end
 
   @doc """
@@ -65,8 +71,17 @@ defmodule Media.Context do
   - Getting a private media will return the url from which you can access your media and the headers that you should supply too to authenticate your request. Make sure to request your media as soon as possible because the request is valid for a short notice.
   The format of the headers is the following %{headers: %{header: value, header1: value1}}
   """
-  def get_media(args) do
-    DB.get_media(Helpers.db_struct(args))
+  def get_media(args, opts \\ %{}) do
+    case DB.get_media(Helpers.db_struct(args)) do
+      {:ok, media} ->
+        {:ok, media |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+
+      {:error, _} = err ->
+        err
+
+      {:error, _, _} = err ->
+        err
+    end
   end
 
   @doc """
@@ -103,10 +118,39 @@ defmodule Media.Context do
 
   Listing all available medias filtered:
 
+  Filtering supports both conditions `OR` and `AND`, it all depends on how you provide the structure of your filters.
+
+  If we want to provide for example the following filter:
+  ``(title=my_portrait and type=image) or (private_status=public)``
+
+  we supply the following payload:
   ```elixir
-  Media.Context.get_medias(%{filters: [%{key: "number_of_contents", value: 10, operation: "<" }]})
-  Media.Context.get_medias(%{filters: [%{key: "id", value: 134}]})
-  Media.Context.get_medias(%{filters: [%{key: "number_of_contents", value: 5, operation: ">" }, %{key: "type", value: "image"}]})
+  %{
+    filters: [
+        [
+            %{
+                key: "title",
+                value: "my_portrait"
+            },
+            %{
+                key: "type",
+                value: "image"
+            }
+        ],
+        [
+            %{
+                key: "private_status",
+                value: "public"
+            }
+        ]
+    ]
+  }
+  ```
+
+  ```elixir
+  Media.Context.get_medias(%{filters: [[%{key: "number_of_contents", value: 10, operation: "<" }]]})
+  Media.Context.get_medias(%{filters: [[%{key: "id", value: 134}]]})
+  Media.Context.get_medias(%{filters: [[%{key: "number_of_contents", value: 5, operation: ">" }, %{key: "type", value: "image"}]]})
   ```
   Available operations are: `<`, `>`, `<>`, `between`, `=`, `<=` and `>=`.
 
@@ -119,15 +163,29 @@ defmodule Media.Context do
   ```
   """
 
-  def list_medias(args \\ %{}) do
-    DB.list_medias(Helpers.db_struct(args))
+  def list_medias(args \\ %{}, opts \\ %{}) do
+    %{total: total, result: medias} = DB.list_medias(Helpers.db_struct(args))
+    ## renders srtucts or maps
+    %{
+      total: total,
+      result: medias |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})
+    }
   end
 
   @doc """
 
   """
-  def content_medias(args \\ %{}) do
-    DB.content_medias(Helpers.db_struct(args))
+  def content_medias(args \\ %{}, opts \\ %{}) do
+    case DB.content_medias(Helpers.db_struct(args)) do
+      {:error, _} = err ->
+        err
+
+      {:error, _, _} = err ->
+        err
+
+      {:ok, result} ->
+        {:ok, result |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+    end
   end
 
   @doc """
@@ -155,20 +213,38 @@ defmodule Media.Context do
   end
 
   @doc """
-  Updates a `media`
+  Updates a `media`.
+
+  The files update is a complete update and not a partial one. If you would like to keep the old files and add to them you just need to supply the file id you want to keep.
+
 
   Usage:
 
-  You can update `media` by calling the following function
+  You can update `media` by calling the following function if you want to upload new files.
 
   ```elixir
-  Media.Context.insert_media(
+  Media.Context.update_media(
     %{
       title: "Media title",
       author: "AUTHOR_ID",
       tags: ["technology"],
       type: "image",
       files: [%Plug.Upload{path: "path/to/file", filename: "image/image.png", content_type: "image/png"}],
+      locked_status: "locked",
+      private_status: "public",
+    }
+  )
+  ```
+    You can update `media` by calling the following function if you want to add new files to existing ones.
+
+  ```elixir
+  Media.Context.update_media(
+    %{
+      title: "Media title",
+      author: "AUTHOR_ID",
+      tags: ["technology"],
+      type: "image",
+      files: [%{file_id: "hacmnzxiuh123ad"}, %Plug.Upload{path: "path/to/file", filename: "image/image.png", content_type: "image/png"}],
       locked_status: "locked",
       private_status: "public",
     }
@@ -181,8 +257,17 @@ defmodule Media.Context do
   ```
 
   """
-  def update_media(args) do
-    DB.update_media(Helpers.db_struct(args))
+  def update_media(args, opts \\ %{}) do
+    case DB.update_media(Helpers.db_struct(args)) do
+      {:ok, media} ->
+        {:ok, media |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+
+      {:error, _} = err ->
+        err
+
+      {:error, _, _} = err ->
+        err
+    end
   end
 
   @doc """
@@ -207,8 +292,14 @@ defmodule Media.Context do
   ```
   """
 
-  def insert_platform(args) do
-    DB.insert_platform(Helpers.db_struct(args))
+  def insert_platform(args, opts \\ %{}) do
+    case DB.insert_platform(Helpers.db_struct(args)) do
+      {:ok, platform} ->
+        {:ok, platform |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+
+      {:error, _} = err ->
+        err
+    end
   end
 
   @doc """
@@ -229,8 +320,17 @@ defmodule Media.Context do
    {:error, message}
   ```
   """
-  def get_platform(args) do
-    DB.get_platform(Helpers.db_struct(args))
+  def get_platform(args, opts \\ %{}) do
+    case DB.get_platform(Helpers.db_struct(args)) do
+      {:ok, platform} ->
+        {:ok, platform |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+
+      {:error, _} = err ->
+        err
+
+      {:error, _, _} = err ->
+        err
+    end
   end
 
   @doc """
@@ -264,31 +364,36 @@ defmodule Media.Context do
   ```elixir
   Media.Context.list_platforms(%{sort: %{id: "desc"}}) ## [desc DESC ASC asc] are accepted
   ```
+  The same filtering rules used for listing medias.
 
   Listing all available platforms filtered:
-
   ```elixir
-  Media.Context.list_platforms(%{filters: [%{key: "number_of_medias", value: 10, operation: "<" }]})
-  Media.Context.list_platforms(%{filters: [%{key: "id", value: 134}]})
-  Media.Context.list_platforms(%{filters: [%{key: "number_of_medias", value: 5, operation: ">" }, %{key: "name", value: "name of platform"}]})
+  Media.Context.list_platforms(%{filters: [[%{key: "number_of_medias", value: 10, operation: "<" }]]})
+  Media.Context.list_platforms(%{filters: [[%{key: "id", value: 134}], [%{key: "name", value: "mobile"}]]})
+  Media.Context.list_platforms(%{filters: [[%{key: "number_of_medias", value: 5, operation: ">" }, %{key: "name", value: "name of platform"}]]})
   ```
   Available operations are: `<`, `>`, `<>`, `between`, `=`, `<=` and `>=`.
 
   Default operation is `=`.
 
-  Filters can be combined together
+  Filters can be combined together.
 
   Returns possibilities
   ```elixir
   %{result: list_of_platform, total: total} ## list_of_platforms can be an empty list if no result found and the total will be 0
   ```
   """
-  def list_platforms(args \\ %{}) do
-    DB.list_platforms(Helpers.db_struct(args))
+  def list_platforms(args \\ %{}, opts \\ %{}) do
+    %{result: platforms, total: total} = DB.list_platforms(Helpers.db_struct(args))
+
+    %{
+      result: platforms |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)}),
+      total: total
+    }
   end
 
   @doc """
-  Updates a `media`
+  Updates a `platform`
 
   Usage:
 
@@ -304,11 +409,20 @@ defmodule Media.Context do
   )
   ```
   Returns possibilities
-  - ``{:ok, media}``
+  - ``{:ok, platform}``
   - ``{:error, changeset}``
   """
-  def update_platform(args) do
-    DB.update_platform(Helpers.db_struct(args))
+  def update_platform(args, opts \\ %{return_type: :struct}) do
+    case DB.update_platform(Helpers.db_struct(args)) do
+      {:ok, platform} ->
+        {:ok, platform |> Helpers.render(%{return_type: Map.get(opts, :return_type, :struct)})}
+
+      {:error, _} = err ->
+        err
+
+      {:error, _, _} = err ->
+        err
+    end
   end
 
   @doc """
