@@ -5,7 +5,7 @@ defmodule Media.Helpers do
 
   alias BSON.ObjectId
   alias Ecto.Changeset
-  alias Media.{Helpers, MongoDB, PostgreSQL, S3Manager}
+  alias Media.{Context, Helpers, MongoDB, PostgreSQL, S3Manager}
   require Logger
   @media_collection "media"
   @platform_collection "platform"
@@ -270,11 +270,14 @@ defmodule Media.Helpers do
   def build_pagination(_offset, _limit), do: {0, 0}
   def extract_param(args, key, default \\ nil)
 
-  def extract_param(args, key, default) when key |> is_binary,
+  def extract_param(args, key, default) when key |> is_binary and args |> is_map,
     do: Map.get(args, key |> String.to_atom()) || Map.get(args, key) || default
 
-  def extract_param(args, key, default) when key |> is_atom,
+  def extract_param(args, key, default) when key |> is_atom and args |> is_map,
     do: Map.get(args, key) || Map.get(args, key |> Atom.to_string()) || default
+
+  def extract_param(_args, _key, default),
+    do: default
 
   ### FILTERS HELPERS ###
   @doc """
@@ -874,5 +877,48 @@ defmodule Media.Helpers do
   def test_mode? do
     System.get_env("MEDIA_TEST") != "test" or
       (System.get_env("MEDIA_TEST") == "test" && Helpers.env(:test_mode, "real") == "real")
+  end
+
+  def validate_platforms(%Ecto.Changeset{valid?: false} = changeset, _), do: changeset
+
+  def validate_platforms(changeset, %{files: files}) do
+    Enum.reduce(files, changeset, fn
+      _, %Ecto.Changeset{valid?: false} = changeset ->
+        changeset
+
+      %{platform_id: platform_id}, acc_changeset ->
+        validate_platform(acc_changeset, platform_id)
+
+      _, acc_changeset ->
+        acc_changeset |> add_error(:files, "Please Provide a platform id for the files")
+    end)
+  end
+
+  defp validate_platform(changeset, platform_id) do
+    with true <- valid_id?(env(:active_database), platform_id),
+         {:ok, _platform} <- get_platform(platform_id) do
+      changeset
+    else
+      false ->
+        changeset |> add_error(:platform, "Id provided is invalid")
+
+      {:error, :not_found, _} ->
+        changeset |> add_error(:platform, "Platform does not exist")
+    end
+  end
+
+  defp valid_id?("mongoDB", id) do
+    valid_object_id?(id)
+  end
+
+  defp valid_id?("postgreSQL", id) do
+    {valid_id?, _id} = valid_postgres_id?(id)
+    valid_id?
+  end
+
+  defp get_platform(nil), do: nil
+
+  defp get_platform(id) do
+    Context.get_platform(id)
   end
 end
