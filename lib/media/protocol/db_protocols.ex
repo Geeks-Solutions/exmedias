@@ -8,7 +8,7 @@ defprotocol DB do
   def delete_media(struct)
   def count_namespace(struct)
   def content_medias(struct)
-
+  def dereference_content(struct)
   def list_platforms(struct)
   def get_platform(struct)
   def insert_platform(struct)

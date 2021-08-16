@@ -212,6 +212,10 @@ defmodule Media.Context do
     DB.delete_media(Helpers.db_struct(args))
   end
 
+  def dereference_content(args) do
+    DB.dereference_content(Helpers.db_struct(args))
+  end
+
   @doc """
   Updates a `media`.
 

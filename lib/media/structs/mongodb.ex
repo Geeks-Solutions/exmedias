@@ -12,6 +12,34 @@ defmodule Media.MongoDB do
     alias Media.Platforms.Platform
     import MediaWeb.Gettext
 
+    def dereference_content(%{args: %{media_id: media_id, content_id: content_id}}) do
+      with true <- Helpers.valid_object_id?(media_id),
+           {:ok, %{"contents_used" => contents_used} = media} <- media_by_id(media_id),
+           {:content, true} <- {:content, content_id in contents_used},
+           data <-
+             MediaSchema.changeset(
+               struct(%MediaSchema{}, media |> Helpers.atomize_keys()),
+               %{
+                 contents_used: contents_used -- [content_id]
+               }
+             ),
+           {_data, true} <- {data, data.valid?} do
+        update(data, media_id, @media_collection)
+      else
+        {:content, false} ->
+          {:error, "Content is not used by this media"}
+
+        false ->
+          {:error, "Invalid id"}
+
+        {:error, :not_found, _collection} ->
+          {:error, %{error: "#{@media_collection} does not exist"}}
+
+        {data, false} ->
+          {:error, data}
+      end
+    end
+
     def content_medias(%{args: id}) do
       if Helpers.valid_object_id?(id) do
         %{result: result} =
@@ -363,13 +391,13 @@ defmodule Media.MongoDB do
     #   end
     # end
 
-    # defp media_by_id(id) do
-    #   Mongo.find_one(Helpers.repo(), @media_collection, %{_id: ObjectId.decode!(id)})
-    #   |> case do
-    #     nil -> {:error, :not_found, @media_collection}
-    #     item -> item
-    #   end
-    # end
+    defp media_by_id(id) do
+      Mongo.find_one(Helpers.repo(), @media_collection, %{_id: ObjectId.decode!(id)})
+      |> case do
+        nil -> {:error, :not_found, @media_collection}
+        item -> {:ok, item}
+      end
+    end
 
     def insert(%MongoDB{args: args}, collection) do
       module = schema_to_module(collection)
