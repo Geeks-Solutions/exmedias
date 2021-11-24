@@ -5,7 +5,7 @@ defmodule Media.Helpers do
 
   alias BSON.ObjectId
   alias Ecto.Changeset
-  alias Media.{Context, Helpers, MongoDB, PostgreSQL, S3Manager}
+  alias Media.{Context, MongoDB, PostgreSQL, S3Manager}
   require Logger
   @media_collection "media"
   @platform_collection "platform"
@@ -82,7 +82,7 @@ defmodule Media.Helpers do
   end
 
   def db_struct(args) do
-    struct(active_database(), %{args: args |> Helpers.atomize_keys()})
+    struct(active_database(), %{args: args |> atomize_keys()})
   end
 
   def get_changes(data) do
@@ -296,7 +296,7 @@ defmodule Media.Helpers do
   [%{title: %{operation: nil}}, %{number_of_contents: %{operation: ">"}}]
   """
   def build_params(params) do
-    case build_args(params |> Helpers.atomize_keys()) do
+    case build_args(params |> atomize_keys()) do
       {:ok, new_args} ->
         {:ok, new_args}
 
@@ -578,7 +578,7 @@ defmodule Media.Helpers do
   end
 
   def delete_files(files_to_delete) do
-    if Helpers.test_mode?(),
+    unless test_mode?(),
       do:
         Enum.each(files_to_delete, fn
           %{filename: filename} ->
@@ -590,7 +590,7 @@ defmodule Media.Helpers do
   end
 
   def delete_file_and_thumbnail(files_to_delete) do
-    if Helpers.test_mode?(),
+    unless test_mode?(),
       do:
         Enum.each(files_to_delete, fn
           %{filename: nil} ->
@@ -635,7 +635,7 @@ defmodule Media.Helpers do
     case base64_file
          |> Base.decode64() do
       {:ok, file_binary} ->
-        %{size: _size, filename: filename} = Helpers.get_base64_info(base64_file)
+        %{size: _size, filename: filename} = get_base64_info(base64_file)
 
         {:ok, temp_dir} = Temp.mkdir("temp_dir")
         temp_path = temp_dir <> filename
@@ -759,7 +759,7 @@ defmodule Media.Helpers do
 
   ## gets youtube details on the video using the api key and video id
   def youtube_video_details(video_id) do
-    if Helpers.test_mode?() do
+    unless test_mode?() do
       endpoint_get_callback(
         "#{youtube_endpoint()}/videos?id=#{video_id}&key=#{env(:youtube_api_key)}&part=contentDetails"
       )
@@ -865,7 +865,7 @@ defmodule Media.Helpers do
     ## get the headers and updated url for private files
     private_data =
       S3Manager.get_temporary_aws_credentials("#{UUID.uuid4(:hex) |> String.slice(0..12)}")
-      |> S3Manager.read_private_object("#{Helpers.aws_bucket_name()}/#{filename}")
+      |> S3Manager.read_private_object("#{aws_bucket_name()}/#{filename}")
 
     Map.merge(file, private_data)
   end
@@ -916,8 +916,7 @@ defmodule Media.Helpers do
   false otherwise
   """
   def test_mode? do
-    System.get_env("MEDIA_TEST") != "test" or
-      (System.get_env("MEDIA_TEST") == "test" && Helpers.env(:test_mode, "real") == "real")
+    System.get_env("MEDIA_TEST") != "test" or env(:test_mode, "real") != "real"
   end
 
   def validate_platforms(%Ecto.Changeset{valid?: false} = changeset, _), do: changeset
