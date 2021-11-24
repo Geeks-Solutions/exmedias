@@ -759,13 +759,13 @@ defmodule Media.Helpers do
 
   ## gets youtube details on the video using the api key and video id
   def youtube_video_details(video_id) do
-    unless test_mode?() do
+    if test_mode?() do
+      ## For testing purposes
+      %{"items" => [%{"contentDetails" => %{"duration" => "PT03M30S"}}]}
+    else
       endpoint_get_callback(
         "#{youtube_endpoint()}/videos?id=#{video_id}&key=#{env(:youtube_api_key)}&part=contentDetails"
       )
-    else
-      ## For testing purposes
-      %{"items" => [%{"contentDetails" => %{"duration" => "PT03M30S"}}]}
     end
   end
 
