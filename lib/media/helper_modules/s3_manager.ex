@@ -106,6 +106,14 @@ defmodule Media.S3Manager do
   @doc false
   def upload(path, filename) do
     if Helpers.test_mode?() do
+      {:ok,
+       %{
+         id: "fake_file_id",
+         filename: "fake_filename",
+         url: "https://www.fake-url.com",
+         bucket: "fake-bucket"
+       }}
+    else
       aws =
         path
         |> Upload.stream_file()
@@ -145,14 +153,6 @@ defmodule Media.S3Manager do
         _ ->
           {:error, gettext("Unable to upload file to amazon")}
       end
-    else
-      {:ok,
-       %{
-         id: "fake_file_id",
-         filename: "fake_filename",
-         url: "https://www.fake-url.com",
-         bucket: "fake-bucket"
-       }}
     end
   end
 
@@ -227,11 +227,11 @@ defmodule Media.S3Manager do
     end
   end
 
-  """
-  This function toggles the object privacy.
-  It takes the object key as a first argument and the new privacy status as a second argument
-  The object key is the object filename.
-  """
+  # """
+  # This function toggles the object privacy.
+  # It takes the object key as a first argument and the new privacy status as a second argument
+  # The object key is the object filename.
+  # """
 
   @doc false
   def change_object_privacy(object_key, "public") do
