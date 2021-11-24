@@ -52,7 +52,6 @@ defmodule Media.Routes do
         pipe_through(unquote(browser_pipes))
 
         get("/", PageController, :index, as: :media)
-        # left here for reference
         # get("/dashboard", HomeController, :dashboard, as: :media_dashboard)
       end
 
