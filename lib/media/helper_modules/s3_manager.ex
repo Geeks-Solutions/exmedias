@@ -198,13 +198,7 @@ defmodule Media.S3Manager do
 
   @doc false
   def get_temporary_aws_credentials(profile_id) do
-    unless Helpers.test_mode?() do
-      %{
-        access_key: "access_key_id",
-        secret_key: "secret_access_key",
-        session_token: "session_token"
-      }
-    else
+    if Helpers.test_mode?() do
       resp =
         STS.assume_role(
           "arn:aws:iam::" <>
@@ -224,6 +218,12 @@ defmodule Media.S3Manager do
         error ->
           {:error, "#{inspect(error)}"}
       end
+    else
+      %{
+        access_key: "access_key_id",
+        secret_key: "secret_access_key",
+        session_token: "session_token"
+      }
     end
   end
 
