@@ -106,6 +106,14 @@ defmodule Media.S3Manager do
   @doc false
   def upload(path, filename) do
     if Helpers.test_mode?() do
+      {:ok,
+       %{
+         id: "fake_file_id",
+         filename: "fake_filename",
+         url: "https://www.fake-url.com/#{UUID.uuid4(:hex)}",
+         bucket: "fake-bucket"
+       }}
+    else
       aws =
         path
         |> Upload.stream_file()
@@ -145,14 +153,6 @@ defmodule Media.S3Manager do
         _ ->
           {:error, gettext("Unable to upload file to amazon")}
       end
-    else
-      {:ok,
-       %{
-         id: "fake_file_id",
-         filename: "fake_filename",
-         url: "https://www.fake-url.com",
-         bucket: "fake-bucket"
-       }}
     end
   end
 
@@ -198,24 +198,32 @@ defmodule Media.S3Manager do
 
   @doc false
   def get_temporary_aws_credentials(profile_id) do
-    resp =
-      STS.assume_role(
-        "arn:aws:iam::" <>
-          Application.get_env(:media, :aws_iam_id) <>
-          ":role/" <> Application.get_env(:media, :aws_role_name),
-        "#{profile_id}"
-      )
+    if Helpers.test_mode?() do
+      resp =
+        STS.assume_role(
+          "arn:aws:iam::" <>
+            Application.get_env(:media, :aws_iam_id) <>
+            ":role/" <> Application.get_env(:media, :aws_role_name),
+          "#{profile_id}"
+        )
 
-    case resp |> send_request() do
-      %{body: body} ->
-        %{
-          access_key: body.access_key_id,
-          secret_key: body.secret_access_key,
-          session_token: body.session_token
-        }
+      case resp |> send_request() do
+        %{body: body} ->
+          %{
+            access_key: body.access_key_id,
+            secret_key: body.secret_access_key,
+            session_token: body.session_token
+          }
 
-      error ->
-        {:error, "#{inspect(error)}"}
+        error ->
+          {:error, "#{inspect(error)}"}
+      end
+    else
+      %{
+        access_key: "access_key_id",
+        secret_key: "secret_access_key",
+        session_token: "session_token"
+      }
     end
   end
 
@@ -227,11 +235,11 @@ defmodule Media.S3Manager do
     end
   end
 
-  """
-  This function toggles the object privacy.
-  It takes the object key as a first argument and the new privacy status as a second argument
-  The object key is the object filename.
-  """
+  # """
+  # This function toggles the object privacy.
+  # It takes the object key as a first argument and the new privacy status as a second argument
+  # The object key is the object filename.
+  # """
 
   @doc false
   def change_object_privacy(object_key, "public") do
@@ -250,6 +258,8 @@ defmodule Media.S3Manager do
 
   defp change_privacy(object_key, acl_permission) do
     if Helpers.test_mode?() do
+      {:ok, :done}
+    else
       {:ok,
        S3.put_object_acl(
          Application.get_env(:media, :aws_bucket_name),
@@ -257,8 +267,6 @@ defmodule Media.S3Manager do
          [{:acl, acl_permission}]
        )
        |> send_request()}
-    else
-      {:ok, :done}
     end
   end
 

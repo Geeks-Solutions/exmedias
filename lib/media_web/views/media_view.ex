@@ -34,6 +34,32 @@ defmodule MediaWeb.MediaView do
     }
   end
 
+  def render("media.json", %{media: media}) do
+    media
+  end
+
+  # defp format_id(nil), do: nil
+
+  def render("message.json", %{message: message}) do
+    %{message: message}
+  end
+
+  def render("error.json", %{error: error}) do
+    %{error: error}
+  end
+
+  def render("medias.json", %{medias: medias, total: total}) do
+    %{result: render_many(medias, MediaView, "media.json"), total: total}
+  end
+
+  def render("medias.json", %{medias: medias}) do
+    render_many(medias, MediaView, "media.json")
+  end
+
+  def render("count.json", %{total: total}) do
+    %{total: total}
+  end
+
   defp format_file(%{platform_id: %BSON.ObjectId{} = id, platform: platform} = file),
     do:
       file
@@ -58,31 +84,5 @@ defmodule MediaWeb.MediaView do
 
   defp format_id(id) do
     id
-  end
-
-  # defp format_id(nil), do: nil
-
-  def render("media.json", %{media: media}) do
-    media
-  end
-
-  def render("message.json", %{message: message}) do
-    %{message: message}
-  end
-
-  def render("error.json", %{error: error}) do
-    %{error: error}
-  end
-
-  def render("medias.json", %{medias: medias, total: total}) do
-    %{result: render_many(medias, MediaView, "media.json"), total: total}
-  end
-
-  def render("medias.json", %{medias: medias}) do
-    render_many(medias, MediaView, "media.json")
-  end
-
-  def render("count.json", %{total: total}) do
-    %{total: total}
   end
 end

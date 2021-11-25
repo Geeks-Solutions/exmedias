@@ -33,7 +33,6 @@ defmodule Media.MongoDB.Schema do
   }
   use Ecto.Schema
   import Ecto.Changeset
-  alias BSON.ObjectId
   alias Media.Helpers
 
   @fields ~w(title author seo_tag contents_used tags type locked_status private_status files namespace)a

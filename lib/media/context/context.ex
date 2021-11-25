@@ -213,6 +213,31 @@ defmodule Media.Context do
   end
 
   @doc """
+  Dereference a media from a content
+
+  You can dereferennce the media from a given conten. When calling this function
+  content that is linked to media will no longer be. This feature is available for
+  MongoDB projects. PostgreSQL did not YET implment this feature, however it will be
+  after tackling [this issue](https://github.com/Geeks-Solutions/exmedias/issues/20).
+
+  Usage:
+
+  ```elixir
+  Media.Context.dereference_content(%{media_id: "media_id", content_id: "content_id"})
+  ```
+
+  Returns possibilities:
+  ```elixir
+  {:ok, message}
+  {:error, message}
+  {:error, :not_found, message}
+  ```
+  """
+  def dereference_content(args) do
+    DB.dereference_content(Helpers.db_struct(args))
+  end
+
+  @doc """
   Updates a `media`.
 
   The files update is a complete update and not a partial one. If you would like to keep the old files and add to them you just need to supply the file id you want to keep.

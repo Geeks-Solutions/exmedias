@@ -52,10 +52,6 @@ defmodule Media.Routes do
         pipe_through(unquote(browser_pipes))
 
         get("/", PageController, :index, as: :media)
-        # left here for reference
-        #  on how to upload media from a form to S3
-        post("/upload", PageController, :upload, as: :media)
-
         # get("/dashboard", HomeController, :dashboard, as: :media_dashboard)
       end
 
