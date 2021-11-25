@@ -110,7 +110,7 @@ defmodule Media.S3Manager do
        %{
          id: "fake_file_id",
          filename: "fake_filename",
-         url: "https://www.fake-url.com",
+         url: "https://www.fake-url.com/#{UUID.uuid4(:hex)}",
          bucket: "fake-bucket"
        }}
     else
