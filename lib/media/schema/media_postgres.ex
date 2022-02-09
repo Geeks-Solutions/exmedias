@@ -39,7 +39,7 @@ defmodule Media.PostgreSQL.Schema do
     field(:private_status, :string, dedfault: "private")
     field(:seo_tag, :string)
     field(:namespace, :string)
-
+    field(:number_of_contents, :integer)
     timestamps()
   end
 
