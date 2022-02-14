@@ -38,4 +38,3 @@ test:
     - apk add imagemagick
     - mix deps.get
     - MEDIA_TEST=test mix coveralls
-
