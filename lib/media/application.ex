@@ -20,7 +20,7 @@ defmodule Media.Application do
     ]
 
     children =
-      if Helpers.test_mode?() do
+      if System.get_env("MEDIA_TEST") == "test" do
         databases = [
           {Mongo,
            [
