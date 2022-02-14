@@ -37,5 +37,4 @@ test:
     - apk add ffmpeg
     - apk add imagemagick
     - mix deps.get
-    - MEDIA_TEST=test mix coveralls
-
+    - mix coveralls
