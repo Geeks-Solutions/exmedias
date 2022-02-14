@@ -916,7 +916,7 @@ defmodule Media.Helpers do
   false otherwise
   """
   def test_mode? do
-    System.get_env("MEDIA_TEST") == "test" or env(:test_mode, "real") != "real"
+    env(:test_mode, "real") != "real"
   end
 
   def validate_platforms(%Ecto.Changeset{valid?: false} = changeset, _), do: changeset
