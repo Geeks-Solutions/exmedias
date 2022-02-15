@@ -1,10 +1,10 @@
 # Guide
 
-**Media** is a dependancy to manage, as the name implies, your media. By ``media`` we mean, your files such as documents, images, videos or podcasts.
+**Media** is a dependency to manage, as the name implies, your media. By ``media`` we mean, your files such as documents, images, videos or podcasts.
 
   Media stores the actual files on [S3 Amazon service](https://aws.amazon.com/s3/).
 
-## Prerequesits
+## Prerequisites
 
 **Media** relies on a [thumbnex](https://github.com/talklittle/thumbnex), therefore your environment must include these two packages:
 - [ImageMagick](https://imagemagick.org/)
@@ -12,7 +12,7 @@
 
 ## Installation
 
-  In your mix.exs add this to your list of dependancies:
+  In your mix.exs add this to your list of dependencies:
 
   ```elixir
   {:media, "~> 0.1.0"}
@@ -36,14 +36,18 @@ Now in your ``config.exs`` add the following:
 ```elixir
 config :media,
   otp_app: :your_app,
-  active_database: "mongoDB",
-  repo: :mongo,
-  content_schema: Blogs.Schema.Article,
-  content_table: "blogs",
-  router: YouAppWeb.Router,
+  active_database: "postgreSQL",
+  repo: YourApp.Repo,
+  content_schema: YourApp.Contents.Content,
+  content_table: "contents",
+  router: YourAppWeb.Router
   aws_bucket_name: "your_bucket",
+  aws_access_key_id: "your_access_key",
+  aws_secret_key: "your_secret_key",
   aws_role_name: "you_role_to_assume_arn",
-  aws_iam_id: "403016165142", ## the IAM user id
+  aws_iam_id: "403016165142", ## the IAM user id,
+  test_mode: "real"
+
 ```
 ``active_database``: the database your project is using accepted values are: "mongoDB" or "postgreSQL"
 ``repo``: The mongodb application name or the repo module in case it's a postgreSQL based project i.e ``YourApp.Repo``.
@@ -90,7 +94,7 @@ end
 
 Before running your project perform the following mix command:
 
-- ``mix media.setup && mix ecto.migrate``
+- ``mix media.setup && mix ecto.migrate --migrations-path priv/repo/media_migrations``
 
 This command will move setup your database with the latest media migrations.
 
@@ -112,7 +116,8 @@ config :media,
   aws_iam_id: "403016165142",
   aws_access_key_id: "AKIAV3V******",
   aws_secret_key: "VoF7GeKJh6A2On******",
-  youtube_api_key: "AIzaSyBwQKaa*******"
+  youtube_api_key: "AIzaSyBwQKaa*******",
+  test_mode: "real"
 ```
 ``active_database``: the database your project is using accepted values are: "mongoDB" or "postgreSQL"
 ``repo``: The mongodb application name or the repo module in case it's a postgreSQL based project i.e ``YourApp.Repo``.
@@ -145,5 +150,31 @@ By adding this, your collection will be setup properly adding the proper collect
 Before running your project perform the following mix command:
 
 - mix media.setup
+
+## PostgreSQL Usage Example
+
+After including the Media.Routes, you create a media by a POST request to the route/media, ie: 
+```elixir
+scope "/" do 
+use Media.Routes, scope: "/media"
+end
+```
+
+First you need to create a platform to define your medias in.
+It is a post request targetting ``base_url/media/platform``.
+
+The media creation post request will hit ``base_url/media/media``.
+The map you get will be the media object, and so far it only creates a media record in the database, you need to associate it to the content for media_contents record to be created, make sure you're passing in the ``struct`` and not the object as map. You can get the struct by the following command:
+```elixir
+{:ok, media} = Media.Context.get_media(object.id)
+%YourContent{
+  medias: [media]
+}
+```
+You can also choose to expect only the media id and get the struct on the backend, to reduce the payload as well, as you are fetching the media from the database.
+
+As this is a put_assoc, passing the object as a map will attempt to re-create the media, and will fail on the primary key constraint (id), but passing the full object as a struct will associate without creation.
+
+At this point, you have a media record, and a media_contents record that links your content to this media, this is all you need to do to manage your media.
 
 Now you are all set to start using Media. 🎉
