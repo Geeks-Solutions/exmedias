@@ -11,10 +11,10 @@ use Mix.Config
 # Configure your database
 config :media, Media.Repo,
   after_connect: {Postgrex, :query!, ["SET search_path TO media,public", []]},
-  username: "testing",
-  password: "testing",
+  username: "postgres",
+  password: "postgres",
   database: "test",
-  hostname: "postgre.eweev.rocks",
+  hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
   ownership_timeout: 60_000,
   queue_target: 10_000,
@@ -23,10 +23,10 @@ config :media, Media.Repo,
 
 ## MONGO TEST DB
 config :media, :db,
-  mongo_url: "mongodb.eweev.rocks",
+  mongo_url: "localhost",
   database: "media_test",
   mongo_ssl: false,
-  port: 8017,
+  port: 27017,
   pool_size: 10
 
 ## INITIALLY THE REPO SHOULD POINT TO
@@ -37,7 +37,8 @@ config :media,
   repo: :mongo,
   aws_bucket_name: "eweevtestbucketprivate",
   aws_role_name: "FullBucketAccess",
-  aws_iam_id: "403016165142"
+  aws_iam_id: "403016165142",
+  test_mode: "fake"
 
 # content_schema: Sections.Section.Type
 
