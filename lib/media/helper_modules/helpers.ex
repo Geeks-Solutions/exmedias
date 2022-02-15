@@ -578,32 +578,28 @@ defmodule Media.Helpers do
   end
 
   def delete_files(files_to_delete) do
-    unless test_mode?(),
-      do:
-        Enum.each(files_to_delete, fn
-          %{filename: filename} ->
-            S3Manager.delete_file(filename)
+    Enum.each(files_to_delete, fn
+      %{filename: filename} ->
+        S3Manager.delete_file(filename)
 
-          _video ->
-            :ok
-        end)
+      _video ->
+        :ok
+    end)
   end
 
   def delete_file_and_thumbnail(files_to_delete) do
-    unless test_mode?(),
-      do:
-        Enum.each(files_to_delete, fn
-          %{filename: nil} ->
-            :ok
+    Enum.each(files_to_delete, fn
+      %{filename: nil} ->
+        :ok
 
-          %{filename: filename} ->
-            S3Manager.delete_file(filename)
+      %{filename: filename} ->
+        S3Manager.delete_file(filename)
 
-            S3Manager.delete_file(S3Manager.thumbnail_filename(filename))
+        S3Manager.delete_file(S3Manager.thumbnail_filename(filename))
 
-          _ ->
-            :ok
-        end)
+      _ ->
+        :ok
+    end)
   end
 
   def files_transaction(new_files, old_files, %{type: type, privacy: privacy}) do
@@ -916,7 +912,7 @@ defmodule Media.Helpers do
   false otherwise
   """
   def test_mode? do
-    System.get_env("MEDIA_TEST") != "test" or env(:test_mode, "real") != "real"
+    env(:test_mode, "real") != "real"
   end
 
   def validate_platforms(%Ecto.Changeset{valid?: false} = changeset, _), do: changeset

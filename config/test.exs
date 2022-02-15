@@ -37,7 +37,8 @@ config :media,
   repo: :mongo,
   aws_bucket_name: "eweevtestbucketprivate",
   aws_role_name: "FullBucketAccess",
-  aws_iam_id: "403016165142"
+  aws_iam_id: "403016165142",
+  test_mode: "fake"
 
 # content_schema: Sections.Section.Type
 
