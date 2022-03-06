@@ -694,6 +694,7 @@ defmodule Media.Helpers do
     with {:ok, %{size: size}} <- File.stat(path),
          {:ok, %{bucket: _bucket, filename: filename, id: file_id, url: url} = base_file} <-
            S3Manager.upload_file(file.filename, file.path),
+         %{height: height, width: width} <- Mogrify.identify(path),
          {_file, {:ok, _}} <-
            {[base_file], S3Manager.change_object_privacy(filename, privacy)},
          ## create a temp directory that will get cleaned up at the end of this request
@@ -712,7 +713,11 @@ defmodule Media.Helpers do
          file_id: file_id,
          url: url,
          type: file.content_type,
-         size: size
+         size: size,
+         metadata: %{
+           height: height,
+           width: width
+         }
        }), [base_file, thumbnail_file]}
     else
       {files, {:error, error}} -> {:error, error, files}
