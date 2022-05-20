@@ -38,7 +38,8 @@ config :media,
   aws_bucket_name: "eweevtestbucketprivate",
   aws_role_name: "FullBucketAccess",
   aws_iam_id: "403016165142",
-  test_mode: "fake"
+  test_mode: "fake",
+  test_mode_database: "fake"
 
 # content_schema: Sections.Section.Type
 

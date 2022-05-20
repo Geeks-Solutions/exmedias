@@ -760,7 +760,7 @@ defmodule Media.Helpers do
 
   ## gets youtube details on the video using the api key and video id
   def youtube_video_details(video_id) do
-    if test_mode?() do
+    if test_mode?(:response) do
       ## For testing purposes
       %{"items" => [%{"contentDetails" => %{"duration" => "PT03M30S"}}]}
     else
@@ -916,9 +916,16 @@ defmodule Media.Helpers do
   This functions checks the environment we are in and the test mode.
   If the test mode is real or the env is not :test it returns true
   false otherwise
+
+  Sometimes we want to split the test mode between the responses and the database
+  Because we need to use an existing project's database, and dummy responses from media
   """
-  def test_mode? do
+  def test_mode?(:response) do
     env(:test_mode, "real") != "real"
+  end
+
+  def test_mode?(:database) do
+    env(:test_mode_database, "real") != "real"
   end
 
   def validate_platforms(%Ecto.Changeset{valid?: false} = changeset, _), do: changeset

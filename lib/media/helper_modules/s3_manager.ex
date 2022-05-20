@@ -105,7 +105,7 @@ defmodule Media.S3Manager do
 
   @doc false
   def upload(path, filename) do
-    if Helpers.test_mode?() do
+    if Helpers.test_mode?(:response) do
       {:ok,
        %{
          id: "fake_file_id",
@@ -198,7 +198,7 @@ defmodule Media.S3Manager do
 
   @doc false
   def get_temporary_aws_credentials(profile_id) do
-    if Helpers.test_mode?() do
+    if Helpers.test_mode?(:response) do
       resp =
         STS.assume_role(
           "arn:aws:iam::" <>
@@ -257,7 +257,7 @@ defmodule Media.S3Manager do
   end
 
   defp change_privacy(object_key, acl_permission) do
-    if Helpers.test_mode?() do
+    if Helpers.test_mode?(:response) do
       {:ok, :done}
     else
       {:ok,
