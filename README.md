@@ -117,7 +117,8 @@ config :media,
   aws_access_key_id: "AKIAV3V******",
   aws_secret_key: "VoF7GeKJh6A2On******",
   youtube_api_key: "AIzaSyBwQKaa*******",
-  test_mode: "real"
+  test_mode: "real",
+  test_mode_database: "real"
 ```
 ``active_database``: the database your project is using accepted values are: "mongoDB" or "postgreSQL"
 ``repo``: The mongodb application name or the repo module in case it's a postgreSQL based project i.e ``YourApp.Repo``.
@@ -126,6 +127,8 @@ config :media,
 `aws_role_name`: In AWS, you can create roles (`IAM` roles) that has certain permission. This role will be assumed in order to authenticate the access to private files
 `aws_iam_id`: The IAM user ID.
 `youtube_api_key`: The youtube api key to fetch videos details.
+`test_mode`: Used to return dummy responses when value is not `real`
+`test_mode_database`: Used to create media database and use Media's Mongo when value is not `real`
   In case your project relies on a ``MongoDB``, in your  ``application.ex`` file add this tuple to the children list inside the ``start`` function:
 
 *NOTE: for AWS and Youtube credentials check the S3Manager Module*
