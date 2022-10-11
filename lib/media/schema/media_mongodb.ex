@@ -14,7 +14,7 @@ defmodule Media.MongoDB.Schema do
     field(:files, {:array, :map})
     field(:type, :string)
     field(:locked_status, :string, default: "locked")
-    field(:private_status, :string, dedfault: "private")
+    field(:private_status, :string, default: "private")
     field(:seo_tag, :string)
     ## can be used for grouping media together.
     field(:namespace, :string)
@@ -46,7 +46,7 @@ defmodule Media.MongoDB.Schema do
     field(:files, {:array, :map})
     field(:type, :string)
     field(:locked_status, :string, default: "locked")
-    field(:private_status, :string, dedfault: "private")
+    field(:private_status, :string, default: "private")
     field(:seo_tag, :string)
     field(:namespace, :string)
     ## virtual as this will not be stored in the database but will be returned when querying

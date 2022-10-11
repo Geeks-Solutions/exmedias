@@ -10,7 +10,7 @@ defmodule Media.PostgreSQL.Schema do
       embeds_many(:files, File, on_replace: :delete)
       field(:type, :string)
       field(:locked_status, :string, default: "locked")
-      field(:private_status, :string, dedfault: "private")
+      field(:private_status, :string, default: "private")
       field(:seo_tag, :string)
 
       timestamps()
@@ -36,7 +36,7 @@ defmodule Media.PostgreSQL.Schema do
     embeds_many(:files, File, on_replace: :delete)
     field(:type, :string)
     field(:locked_status, :string, default: "locked")
-    field(:private_status, :string, dedfault: "private")
+    field(:private_status, :string, default: "private")
     field(:seo_tag, :string)
     field(:namespace, :string)
     field(:number_of_contents, :integer, virtual: true, default: 0)
