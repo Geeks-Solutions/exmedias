@@ -124,8 +124,19 @@ defmodule Media.S3Manager do
         )
         |> send_request()
 
-      case aws.status_code do
-        200 ->
+      case aws do
+        {:error, {:http_error, 403, %{status_code: 403, body: body}}} ->
+          if String.contains?(
+               body,
+               "The request signature we calculated does not match the signature you provided. Check your key and signing method."
+             ) do
+            {:error,
+             gettext("Please make sure your file name does not contain any special character")}
+          else
+            {:error, gettext("Unable to upload file to amazon")}
+          end
+
+        %{status_code: 200} ->
           # File.rm!(filename)
 
           %{
