@@ -877,8 +877,8 @@ defmodule Media.Helpers do
     tmp_path = Path.join(dir_path, "thumbnail-#{UUID.uuid4()}.#{format}")
 
     Thumbnex.create_thumbnail(path, tmp_path,
-      max_width: 200,
-      max_height: 200
+      max_width: 400,
+      max_height: 400
     )
 
     tmp_path
