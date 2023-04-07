@@ -17,7 +17,7 @@ defmodule MediaWeb.MediaView do
               seo_tag: seo_tag,
               id: id
             } = media
-        }
+        } = content
       ) do
     %{
       title: title,
@@ -30,8 +30,13 @@ defmodule MediaWeb.MediaView do
       id: id |> format_id(),
       number_of_contents: Map.get(media, :number_of_contents, 0),
       files: media.files |> Enum.map(&(&1 |> format_file())),
-      namespace: media.namespace
+      namespace: media.namespace,
+      meta: Map.get(content, :meta, %{})
     }
+  end
+
+  def render("media.json", %{media: media, meta: meta}) do
+    Map.merge(media, %{meta: meta})
   end
 
   def render("media.json", %{media: media}) do
