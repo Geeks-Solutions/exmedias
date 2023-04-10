@@ -31,6 +31,7 @@ defmodule MediaWeb.MediaView do
       number_of_contents: Map.get(media, :number_of_contents, 0),
       files: media.files |> Enum.map(&(&1 |> format_file())),
       namespace: media.namespace,
+      creation_date: media.inserted_at,
       meta: Map.get(media, :meta, %{})
     }
   end

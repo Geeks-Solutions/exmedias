@@ -343,9 +343,9 @@ defmodule Media.MongoDB do
       ## I had to put the join pipes first as the other pipes might depend on its result in some cases
       pipes =
         additional_pipes ++
+          sort_pipe ++
           filters_pipe ++
-          pagintaion_pipe ++
-          sort_pipe
+          pagintaion_pipe
 
       pipes =
         if Enum.all?(pipes, &(&1 == [])),
