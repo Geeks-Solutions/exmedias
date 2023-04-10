@@ -61,7 +61,7 @@ defmodule Media.MixProject do
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
       {:sweet_xml, ">= 0.0.0"},
-      {:elixir_xml_to_map, "~> 2.0.0"},
+      {:elixir_xml_to_map, "~> 3.0"},
       {:elixir_uuid, "~> 1.2.1"},
       {:ex_aws_sts, "~> 2.0"},
       {:hackney, "~> 1.9"},
