@@ -866,7 +866,7 @@ defmodule Media.Helpers do
     ## get the headers and updated url for private files
     private_data =
       S3Manager.get_temporary_aws_credentials("#{UUID.uuid4(:hex) |> String.slice(0..12)}")
-      |> S3Manager.read_private_object("#{aws_bucket_name()}/#{filename}")
+      |> S3Manager.read_private_object("#{filename}")
 
     Map.merge(file, private_data)
   end

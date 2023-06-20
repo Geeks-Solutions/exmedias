@@ -285,15 +285,15 @@ defmodule Media.S3Manager do
   def read_private_object(credentials, destination) do
     ## We need to check the dependency plug_crypto there is a mismatch with OTP24
     url = "https://#{Helpers.aws_bucket_name()}.s3.amazonaws.com/#{destination}?Action=GetObject"
-    headers = %{"X-Amz-Secure-Token" => credentials.session_token}
+    headers = %{"X-Amz-Security-Token" => credentials.session_token}
 
     {:ok, %{} = sig_data, _} =
       Sigaws.sign_req(url,
         region: Application.get_env(:media, :aws_region) || "us-east-1",
         service: "s3",
         headers: headers,
-        access_key: Application.get_env(:media, :aws_access_key_id),
-        secret: Application.get_env(:media, :aws_secret_key)
+        access_key: credentials.access_key,
+        secret: credentials.secret_key
       )
 
     headers =
