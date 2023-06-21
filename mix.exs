@@ -66,7 +66,7 @@ defmodule Media.MixProject do
       {:ex_aws_sts, "~> 2.0"},
       {:hackney, "~> 1.9"},
       {:sigaws,
-       git: "https://github.com/Geeks-Solutions/sigaws.git", ref: "b7e70518415afd8568cd0131fa8c40d8d31544e0"},
+       git: "https://github.com/Geeks-Solutions/sigaws.git", ref: "26e6846c1254fa37d566982e630e50948b8d2415"},
       {:httpoison, "~> 1.8", override: true},
       {:poison, ">= 4.0.1"},
       {:morphix, "~> 0.8.0"},
