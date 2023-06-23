@@ -4,7 +4,7 @@ defmodule Media.S3Manager do
   @moduledoc """
     Amazon Web Services [AWS](https://aws.amazon.com) is an essential part of **Medias** Functionalities. In order to take advantage of all **Medias** features, you need to provide the needed AWS data.
 
-    Media gives you the ability to secure your files if it contain sensitive infromation or to have a public access to your media. However, these files to be secured **Medias** need some data from you.
+    Media gives you the ability to secure your files if they contain sensitive infromation or to have a public access to your media. However, these files to be secured **Medias** need some data from you.
     This guide will show you the steps you need to follow to collect these values:
 
     - Login to AWS [Console](https://console.aws.amazon.com/console/home?region=us-east-1#).
@@ -43,6 +43,21 @@ defmodule Media.S3Manager do
     - Create the role
 
     Now please retrieve the role name because this is what Medias needs.
+
+    Finally, because you'll be sending custom security headers when submitting your GET requests, you need to configure CORS on your Bucket:
+    - Select your bucket on the buckets list
+    - Go to the permissions tab
+    - Scroll down to the CORS settings and edit
+    - Provide the following value (adapt to your needs if you have existing CORS settings):
+    ```json
+    [
+      {
+        "AllowedHeaders": ["*"],
+        "AllowedMethods": ["GET"],
+        "AllowedOrigins": ["*"]
+      }
+    ]
+    ```
 
     And we are done! 👏🏽
 

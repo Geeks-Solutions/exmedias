@@ -683,6 +683,16 @@ defmodule Media.Helpers do
     handle_youtube_video(file)
   end
 
+  def upload_file(
+    %{file: %Plug.Upload{path: _path, content_type: "application/" <> _doctype} = _file} =
+    new_file,
+    _oldfiles,
+    "document",
+    privacy
+  ) do
+    upload_document(new_file, privacy)
+  end
+
   def upload_file(_, _, _, _privacy),
     do:
       {:error,
@@ -719,6 +729,29 @@ defmodule Media.Helpers do
            width: width
          }
        }), [base_file, thumbnail_file]}
+    else
+      {files, {:error, error}} -> {:error, error, files}
+      {:error, err} -> {:error, err, []}
+    end
+  end
+
+  def upload_document(%{file: %{path: path} = file} = new_file, privacy) do
+    with {:ok, %{size: size}} <- File.stat(path),
+         {:ok, %{bucket: _bucket, filename: filename, id: file_id, url: url} = base_file} <-
+           S3Manager.upload_file(file.filename, file.path),
+         {_file, {:ok, _}} <-
+           {[base_file], S3Manager.change_object_privacy(filename, privacy)} do
+      {:ok,
+       new_file
+       |> Map.delete(:file)
+       |> Map.merge(%{
+         filename: filename,
+         thumbnail_url: file.content_type,
+         file_id: file_id,
+         url: url,
+         type: file.content_type,
+         size: size
+       }), [base_file]}
     else
       {files, {:error, error}} -> {:error, error, files}
       {:error, err} -> {:error, err, []}

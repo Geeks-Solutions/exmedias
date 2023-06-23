@@ -29,7 +29,8 @@ defmodule Media.MongoDB.Schema do
   @file_metadata_per_type %{
     "video" => ~w(duration)a,
     "podcast" => ~w(duration filename)a,
-    "image" => ~w(size filename metadata)a
+    "image" => ~w(size filename metadata)a,
+    "document" => ~w(size filename)a
   }
   use Ecto.Schema
   import Ecto.Changeset
