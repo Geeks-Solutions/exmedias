@@ -693,6 +693,16 @@ defmodule Media.Helpers do
     upload_document(new_file, privacy)
   end
 
+  def upload_file(
+    %{file: %Plug.Upload{path: _path, content_type: "text/" <> _doctype} = _file} =
+    new_file,
+    _oldfiles,
+    "document",
+    privacy
+  ) do
+    upload_document(new_file, privacy)
+  end
+
   def upload_file(_, _, _, _privacy),
     do:
       {:error,
