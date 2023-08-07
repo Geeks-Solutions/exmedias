@@ -70,7 +70,7 @@ defmodule Media.MixProject do
       {:httpoison, "~> 1.8", override: true},
       {:poison, ">= 4.0.1"},
       {:morphix, "~> 0.8.0"},
-      {:mongodb, "~> 0.5.1"},
+      {:mongodb, "~> 1.0.0"},
       {:thumbnex, "~> 0.4"},
       {:temp, "~> 0.4"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
