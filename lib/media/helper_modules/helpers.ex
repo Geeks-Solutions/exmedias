@@ -189,22 +189,22 @@ defmodule Media.Helpers do
   end
 
   def create_collections do
-    Mongo.command(repo(), %{
-      createIndexes: @media_collection,
-      indexes: [
+    Mongo.command(repo(), [
+      {"createIndexes", @media_collection},
+      {"indexes", [
         %{key: %{author: 1}, name: "name_idx", unique: false},
         %{key: %{type: 1}, name: "type_idx", unique: false},
         %{key: %{contents_used: 1}, name: "contents_idx", unique: false},
         %{key: %{namespace: 1}, name: "namespace_idx", unique: false}
-      ]
-    })
+      ]}
+    ])
 
-    Mongo.command(repo(), %{
-      createIndexes: @platform_collection,
-      indexes: [
+    Mongo.command(repo(), [
+      {"createIndexes", @platform_collection},
+      {"indexes", [
         %{key: %{name: 1}, name: "name_idx", unique: true}
-      ]
-    })
+      ]}
+    ])
   end
 
   def format_result(result, schema) do
