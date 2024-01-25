@@ -4,7 +4,7 @@ defmodule Media.S3Manager do
   @moduledoc """
     Amazon Web Services [AWS](https://aws.amazon.com) is an essential part of **Medias** Functionalities. In order to take advantage of all **Medias** features, you need to provide the needed AWS data.
 
-    Media gives you the ability to secure your files if it contain sensitive infromation or to have a public access to your media. However, these files to be secured **Medias** need some data from you.
+    Media gives you the ability to secure your files if they contain sensitive infromation or to have a public access to your media. However, these files to be secured **Medias** need some data from you.
     This guide will show you the steps you need to follow to collect these values:
 
     - Login to AWS [Console](https://console.aws.amazon.com/console/home?region=us-east-1#).
@@ -43,6 +43,21 @@ defmodule Media.S3Manager do
     - Create the role
 
     Now please retrieve the role name because this is what Medias needs.
+
+    Finally, because you'll be sending custom security headers when submitting your GET requests, you need to configure CORS on your Bucket:
+    - Select your bucket on the buckets list
+    - Go to the permissions tab
+    - Scroll down to the CORS settings and edit
+    - Provide the following value (adapt to your needs if you have existing CORS settings):
+    ```json
+    [
+      {
+        "AllowedHeaders": ["*"],
+        "AllowedMethods": ["GET"],
+        "AllowedOrigins": ["*"]
+      }
+    ]
+    ```
 
     And we are done! 👏🏽
 
@@ -209,7 +224,7 @@ defmodule Media.S3Manager do
 
   @doc false
   def get_temporary_aws_credentials(profile_id) do
-    if Helpers.test_mode?(:response) do
+    if not Helpers.test_mode?(:response) do
       resp =
         STS.assume_role(
           "arn:aws:iam::" <>
@@ -231,9 +246,9 @@ defmodule Media.S3Manager do
       end
     else
       %{
-        access_key: "access_key_id",
-        secret_key: "secret_access_key",
-        session_token: "session_token"
+        access_key: "dummy_access_key_id_test_mode",
+        secret_key: "dummy_secret_access_key_test_mode",
+        session_token: "dummy_session_token_test_mode"
       }
     end
   end
@@ -284,16 +299,21 @@ defmodule Media.S3Manager do
   @doc false
   def read_private_object(credentials, destination) do
     ## We need to check the dependency plug_crypto there is a mismatch with OTP24
-    url = "https://#{Helpers.aws_bucket_name()}.s3.amazonaws.com/#{destination}?Action=GetObject"
-    headers = %{"X-Amz-Secure-Token" => credentials.session_token}
+
+    base_url = "https://s3.amazonaws.com/#{Helpers.aws_bucket_name()}"
+    # We encode the % and + characters on the URL we return so it's not double escaped or misinterpreted
+    url_to_return = "#{base_url}/#{URI.encode(destination, &(!(&1 == ?% or &1 == ?+)))}"
+    url_to_sign = "#{base_url}/#{destination}"
+
+    headers = %{"X-Amz-Security-Token" => credentials.session_token}
 
     {:ok, %{} = sig_data, _} =
-      Sigaws.sign_req(url,
+      Sigaws.sign_req(url_to_sign,
         region: Application.get_env(:media, :aws_region) || "us-east-1",
         service: "s3",
         headers: headers,
-        access_key: Application.get_env(:media, :aws_access_key_id),
-        secret: Application.get_env(:media, :aws_secret_key)
+        access_key: credentials.access_key,
+        secret: credentials.secret_key
       )
 
     headers =
@@ -301,6 +321,6 @@ defmodule Media.S3Manager do
       |> Map.delete("X-Amz-SignedHeaders")
       |> Map.delete("X-Amz-Algorithm")
 
-    %{url: url, headers: headers}
+    %{url: url_to_return, headers: headers}
   end
 end

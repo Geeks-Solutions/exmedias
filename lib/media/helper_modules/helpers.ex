@@ -189,22 +189,22 @@ defmodule Media.Helpers do
   end
 
   def create_collections do
-    Mongo.command(repo(), %{
-      createIndexes: @media_collection,
-      indexes: [
+    Mongo.command(repo(), [
+      {"createIndexes", @media_collection},
+      {"indexes", [
         %{key: %{author: 1}, name: "name_idx", unique: false},
         %{key: %{type: 1}, name: "type_idx", unique: false},
         %{key: %{contents_used: 1}, name: "contents_idx", unique: false},
         %{key: %{namespace: 1}, name: "namespace_idx", unique: false}
-      ]
-    })
+      ]}
+    ])
 
-    Mongo.command(repo(), %{
-      createIndexes: @platform_collection,
-      indexes: [
+    Mongo.command(repo(), [
+      {"createIndexes", @platform_collection},
+      {"indexes", [
         %{key: %{name: 1}, name: "name_idx", unique: true}
-      ]
-    })
+      ]}
+    ])
   end
 
   def format_result(result, schema) do
@@ -683,6 +683,26 @@ defmodule Media.Helpers do
     handle_youtube_video(file)
   end
 
+  def upload_file(
+    %{file: %Plug.Upload{path: _path, content_type: "application/" <> _doctype} = _file} =
+    new_file,
+    _oldfiles,
+    "document",
+    privacy
+  ) do
+    upload_document(new_file, privacy)
+  end
+
+  def upload_file(
+    %{file: %Plug.Upload{path: _path, content_type: "text/" <> _doctype} = _file} =
+    new_file,
+    _oldfiles,
+    "document",
+    privacy
+  ) do
+    upload_document(new_file, privacy)
+  end
+
   def upload_file(_, _, _, _privacy),
     do:
       {:error,
@@ -719,6 +739,29 @@ defmodule Media.Helpers do
            width: width
          }
        }), [base_file, thumbnail_file]}
+    else
+      {files, {:error, error}} -> {:error, error, files}
+      {:error, err} -> {:error, err, []}
+    end
+  end
+
+  def upload_document(%{file: %{path: path} = file} = new_file, privacy) do
+    with {:ok, %{size: size}} <- File.stat(path),
+         {:ok, %{bucket: _bucket, filename: filename, id: file_id, url: url} = base_file} <-
+           S3Manager.upload_file(file.filename, file.path),
+         {_file, {:ok, _}} <-
+           {[base_file], S3Manager.change_object_privacy(filename, privacy)} do
+      {:ok,
+       new_file
+       |> Map.delete(:file)
+       |> Map.merge(%{
+         filename: filename,
+         thumbnail_url: file.content_type,
+         file_id: file_id,
+         url: url,
+         type: file.content_type,
+         size: size
+       }), [base_file]}
     else
       {files, {:error, error}} -> {:error, error, files}
       {:error, err} -> {:error, err, []}
@@ -866,7 +909,7 @@ defmodule Media.Helpers do
     ## get the headers and updated url for private files
     private_data =
       S3Manager.get_temporary_aws_credentials("#{UUID.uuid4(:hex) |> String.slice(0..12)}")
-      |> S3Manager.read_private_object("#{aws_bucket_name()}/#{filename}")
+      |> S3Manager.read_private_object("#{filename}")
 
     Map.merge(file, private_data)
   end
@@ -877,8 +920,8 @@ defmodule Media.Helpers do
     tmp_path = Path.join(dir_path, "thumbnail-#{UUID.uuid4()}.#{format}")
 
     Thumbnex.create_thumbnail(path, tmp_path,
-      max_width: 200,
-      max_height: 200
+      max_width: 400,
+      max_height: 400
     )
 
     tmp_path
