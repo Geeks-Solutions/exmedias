@@ -198,6 +198,7 @@ defmodule Media.PostgreSQL do
       media
       |> Map.put(:files, files |> Helpers.atomize_keys())
       |> Map.put(:number_of_contents, Map.get(args, :number_of_contents))
+      |> Map.put(:contents_used, Map.get(args, :contents_used))
       |> Map.delete(:total)
     end
 
@@ -233,6 +234,7 @@ defmodule Media.PostgreSQL do
         media: m,
         files: fragment("JSONB_AGG(JSONB_BUILD_OBJECT('platform', ?, 'file', ?))", p, f),
         number_of_contents: count(c.content_id),
+        contents_used: fragment("array_agg(?)", c.content_id),
         total: fragment("count(?) OVER()", m.id)
       })
       |> group_by([m], m.id)

@@ -40,6 +40,7 @@ defmodule Media.PostgreSQL.Schema do
     field(:seo_tag, :string)
     field(:namespace, :string)
     field(:number_of_contents, :integer, virtual: true, default: 0)
+    field(:contents_used, {:array, :string}, virtual: true, default: [])
     timestamps()
   end
 
