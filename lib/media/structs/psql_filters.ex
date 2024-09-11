@@ -118,6 +118,9 @@ defmodule Media.FiltersPostgreSQL do
     value = if is_binary(value), do: value |> String.to_integer(), else: value
 
     case operation do
+      nil ->
+        dynamic([p, m, c, joint_table], fragment("COUNT(?) = ?", joint_table.content_id, ^value))
+
       "=" ->
         dynamic([p, m, c, joint_table], fragment("COUNT(?) = ?", joint_table.content_id, ^value))
 
