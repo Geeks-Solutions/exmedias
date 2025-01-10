@@ -755,7 +755,7 @@ defmodule Media.Helpers do
         {:ok,
          new_file
          |> Map.delete(:file)
-         |> Map.merge(%{thumbnail_url: file.url}), [base_file]}
+         |> Map.merge(%{thumbnail_url: new_file.url}), [base_file]}
     end
   end
 
