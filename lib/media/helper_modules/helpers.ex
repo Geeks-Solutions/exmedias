@@ -191,19 +191,21 @@ defmodule Media.Helpers do
   def create_collections do
     Mongo.command(repo(), [
       {"createIndexes", @media_collection},
-      {"indexes", [
-        %{key: %{author: 1}, name: "name_idx", unique: false},
-        %{key: %{type: 1}, name: "type_idx", unique: false},
-        %{key: %{contents_used: 1}, name: "contents_idx", unique: false},
-        %{key: %{namespace: 1}, name: "namespace_idx", unique: false}
-      ]}
+      {"indexes",
+       [
+         %{key: %{author: 1}, name: "name_idx", unique: false},
+         %{key: %{type: 1}, name: "type_idx", unique: false},
+         %{key: %{contents_used: 1}, name: "contents_idx", unique: false},
+         %{key: %{namespace: 1}, name: "namespace_idx", unique: false}
+       ]}
     ])
 
     Mongo.command(repo(), [
       {"createIndexes", @platform_collection},
-      {"indexes", [
-        %{key: %{name: 1}, name: "name_idx", unique: true}
-      ]}
+      {"indexes",
+       [
+         %{key: %{name: 1}, name: "name_idx", unique: true}
+       ]}
     ])
   end
 
@@ -684,22 +686,22 @@ defmodule Media.Helpers do
   end
 
   def upload_file(
-    %{file: %Plug.Upload{path: _path, content_type: "application/" <> _doctype} = _file} =
-    new_file,
-    _oldfiles,
-    "document",
-    privacy
-  ) do
+        %{file: %Plug.Upload{path: _path, content_type: "application/" <> _doctype} = _file} =
+          new_file,
+        _oldfiles,
+        "document",
+        privacy
+      ) do
     upload_document(new_file, privacy)
   end
 
   def upload_file(
-    %{file: %Plug.Upload{path: _path, content_type: "text/" <> _doctype} = _file} =
-    new_file,
-    _oldfiles,
-    "document",
-    privacy
-  ) do
+        %{file: %Plug.Upload{path: _path, content_type: "text/" <> _doctype} = _file} =
+          new_file,
+        _oldfiles,
+        "document",
+        privacy
+      ) do
     upload_document(new_file, privacy)
   end
 
@@ -717,8 +719,22 @@ defmodule Media.Helpers do
          %{height: height, width: width} <- Mogrify.identify(path),
          {_file, {:ok, _}} <-
            {[base_file], S3Manager.change_object_privacy(filename, privacy)},
+         new_file <-
+           new_file
+           |> Map.merge(%{
+             filename: filename,
+             file_id: file_id,
+             url: url,
+             type: file.content_type,
+             size: size,
+             metadata: %{
+               height: height,
+               width: width
+             }
+           }),
          ## create a temp directory that will get cleaned up at the end of this request
-         tmp_path <- create_thumbnail(file.path),
+         {tmp_path, _, _} when not is_nil(tmp_path) <-
+           {create_thumbnail(file.path), new_file, base_file},
          {_basefile, {:ok, %{filename: thumbnail_filename, url: thumbnail_url} = thumbnail_file}} <-
            {[base_file], S3Manager.upload_thumbnail(filename, tmp_path)},
          {_files, {:ok, _}} <-
@@ -727,21 +743,19 @@ defmodule Media.Helpers do
       {:ok,
        new_file
        |> Map.delete(:file)
-       |> Map.merge(%{
-         filename: filename,
-         thumbnail_url: thumbnail_url,
-         file_id: file_id,
-         url: url,
-         type: file.content_type,
-         size: size,
-         metadata: %{
-           height: height,
-           width: width
-         }
-       }), [base_file, thumbnail_file]}
+       |> Map.merge(%{thumbnail_url: thumbnail_url}), [base_file, thumbnail_file]}
     else
-      {files, {:error, error}} -> {:error, error, files}
-      {:error, err} -> {:error, err, []}
+      {files, {:error, error}} ->
+        {:error, error, files}
+
+      {:error, err} ->
+        {:error, err, []}
+
+      {nil, new_file, base_file} ->
+        {:ok,
+         new_file
+         |> Map.delete(:file)
+         |> Map.merge(%{thumbnail_url: file.content_type}), [base_file]}
     end
   end
 
@@ -919,12 +933,13 @@ defmodule Media.Helpers do
     format = String.split(path, ".") |> Enum.take(2) |> List.last()
     tmp_path = Path.join(dir_path, "thumbnail-#{UUID.uuid4()}.#{format}")
 
-    Thumbnex.create_thumbnail(path, tmp_path,
-      max_width: 400,
-      max_height: 400
-    )
-
-    tmp_path
+    case Thumbnex.create_thumbnail(path, tmp_path,
+           max_width: 400,
+           max_height: 400
+         ) do
+      :ok -> tmp_path
+      {:error, _error} -> nil
+    end
   end
 
   # Helper functions to read the binary to determine the image extension
