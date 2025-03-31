@@ -713,10 +713,14 @@ defmodule Media.Helpers do
        ), []}
 
   def upload_image(%{file: %{path: path} = file} = new_file, privacy) do
-    with {:ok, %{size: size}} <- File.stat(path),
+    # We store a symlink to the temp file that contains the extension for Identify to pickup the right type
+    symlink_path = path <> "-#{file.filename}"
+
+    with :ok <- File.ln_s(path, symlink_path),
+         {:ok, %{size: size}} <- File.stat(path),
+         %{height: height, width: width} <- Mogrify.identify(symlink_path),
          {:ok, %{bucket: _bucket, filename: filename, id: file_id, url: url} = base_file} <-
            S3Manager.upload_file(file.filename, file.path),
-         %{height: height, width: width} <- Mogrify.identify(path),
          {_file, {:ok, _}} <-
            {[base_file], S3Manager.change_object_privacy(filename, privacy)},
          new_file <-
