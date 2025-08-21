@@ -27,6 +27,7 @@ defmodule MediaWeb.MediaView do
       locked_status: locked_status,
       private_status: private_status,
       seo_tag: seo_tag,
+      metadata: Map.get(media, :metadata, %{}),
       id: id |> format_id(),
       number_of_contents: Map.get(media, :number_of_contents, 0),
       files: media.files |> Enum.map(&(&1 |> format_file())),
