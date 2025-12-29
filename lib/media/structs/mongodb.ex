@@ -56,6 +56,76 @@ defmodule Media.MongoDB do
       {:ok, %{total: total}}
     end
 
+    def count_files_namespace(%{args: namespace}) do
+      case Mongo.aggregate(Helpers.repo(), @media_collection, [
+             %{
+               "$match": %{
+                 "namespace" => namespace
+               }
+             },
+             %{
+               "$project": %{
+                 files_count: %{"$size": "$files"}
+               }
+             },
+             %{
+               "$group": %{
+                 _id: 0,
+                 files_total: %{"$sum": "$files_count"}
+               }
+             }
+           ])
+           |> Enum.to_list() do
+        [%{"files_total" => total}] -> total
+        _ -> 0
+      end
+    end
+
+    def sum_filesizes_namespace(%{args: namespace}) do
+      case Mongo.aggregate(Helpers.repo(), @media_collection, [
+             %{"$match" => %{"namespace" => namespace}},
+             %{
+               "$project" => %{
+                 "doc_sum" => %{
+                   "$reduce" => %{
+                     "input" => %{"$ifNull" => ["$files", []]},
+                     "initialValue" => 0,
+                     "in" => %{"$add" => ["$$value", %{"$ifNull" => ["$$this.size", 0]}]}
+                   }
+                 }
+               }
+             },
+             %{"$group" => %{"_id" => 0, "sum_file_size" => %{"$sum" => "$doc_sum"}}}
+           ])
+           |> Enum.to_list() do
+        [%{"sum_file_size" => total}] -> total
+        _ -> 0
+      end
+    end
+
+    def largest_filesize_namespace(%{args: namespace}) do
+      case Mongo.aggregate(Helpers.repo(), @media_collection, [
+             %{"$match" => %{"namespace" => namespace}},
+             %{
+               "$project" => %{
+                 "doc_max" => %{
+                   "$reduce" => %{
+                     "input" => %{"$ifNull" => ["$files", []]},
+                     # or nil if you prefer
+                     "initialValue" => -1,
+                     "in" => %{"$max" => ["$$value", "$$this.size"]}
+                   }
+                 }
+               }
+             },
+             %{"$group" => %{"_id" => 0, "max_file_size" => %{"$max" => "$doc_max"}}}
+           ])
+           |> Enum.to_list() do
+        [%{"max_file_size" => total}] -> total
+        _ -> 0
+      end
+    end
+
     ## TO DO to be altered in next issues
     def list_platforms(%MongoDB{args: args}) do
       args = args |> Helpers.atomize_keys()
@@ -343,9 +413,9 @@ defmodule Media.MongoDB do
       ## I had to put the join pipes first as the other pipes might depend on its result in some cases
       pipes =
         additional_pipes ++
+          sort_pipe ++
           filters_pipe ++
-          pagintaion_pipe ++
-          sort_pipe
+          pagintaion_pipe
 
       pipes =
         if Enum.all?(pipes, &(&1 == [])),

@@ -50,6 +50,50 @@ defmodule Media.PostgreSQL do
       {:ok, res}
     end
 
+    def count_files_namespace(%{args: namespace}) do
+      from(m in MediaSchema,
+        where: m.namespace == ^namespace,
+        # note the LATERAL is inside the fragment string; no :lateral opt
+        join: f in fragment("LATERAL unnest(COALESCE(?, '{}'::jsonb[]))", m.files),
+        on: true,
+        select:
+          type(
+            fragment("COUNT(*)"),
+            :integer
+          )
+      )
+      |> Helpers.repo().one()
+    end
+
+    def sum_filesizes_namespace(%{args: namespace}) do
+      from(m in MediaSchema,
+        where: m.namespace == ^namespace,
+        # note the LATERAL is inside the fragment string; no :lateral opt
+        join: f in fragment("LATERAL unnest(COALESCE(?, '{}'::jsonb[]))", m.files),
+        on: true,
+        select:
+          type(
+            fragment("COALESCE(SUM(COALESCE((?->>'size')::bigint, 0)), 0)", f),
+            :integer
+          )
+      )
+      |> Helpers.repo().one()
+    end
+
+    def largest_filesize_namespace(%{args: namespace}) do
+      from(m in MediaSchema,
+        where: m.namespace == ^namespace,
+        join: f in fragment("LATERAL unnest(COALESCE(?, '{}'::jsonb[]))", m.files),
+        on: true,
+        select:
+          type(
+            fragment("COALESCE(MAX(COALESCE((?->>'size')::bigint, 0)), 0)", f),
+            :integer
+          )
+      )
+      |> Helpers.repo().one()
+    end
+
     def insert_media(%{args: attrs}) do
       %MediaSchema{}
       |> MediaSchema.changeset(attrs)
@@ -198,6 +242,7 @@ defmodule Media.PostgreSQL do
       media
       |> Map.put(:files, files |> Helpers.atomize_keys())
       |> Map.put(:number_of_contents, Map.get(args, :number_of_contents))
+      |> Map.put(:contents_used, Map.get(args, :contents_used))
       |> Map.delete(:total)
     end
 
@@ -233,6 +278,7 @@ defmodule Media.PostgreSQL do
         media: m,
         files: fragment("JSONB_AGG(JSONB_BUILD_OBJECT('platform', ?, 'file', ?))", p, f),
         number_of_contents: count(c.content_id),
+        contents_used: fragment("array_agg(?)", c.content_id),
         total: fragment("count(?) OVER()", m.id)
       })
       |> group_by([m], m.id)

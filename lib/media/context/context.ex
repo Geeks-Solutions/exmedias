@@ -478,11 +478,33 @@ defmodule Media.Context do
   @doc """
   Namespaces are used to Group media to a certain namespace.
 
-  This Function call was created to ensure a performant count over the medias that are related to the same name space.
+  This Function call was created to ensure a performant count over the medias that are related to the same namespace.
 
   Use this call when you only need the count instead of relying on the total returned with the ``list_medias`` call.
   """
   def count_namespace(args) do
     DB.count_namespace(Helpers.db_struct(args))
+  end
+
+  @doc """
+  This function returns the count of files for given namespace.
+  If a media carries three files it will count as three
+  """
+  def count_files_namespace(args) do
+    DB.count_files_namespace(Helpers.db_struct(args))
+  end
+
+  @doc """
+  This function computes the sum of all files belonging to a given namespace
+  """
+  def sum_filesizes_namespace(args) do
+    DB.sum_filesizes_namespace(Helpers.db_struct(args))
+  end
+
+  @doc """
+  This function returns the size of the largest file within a given namespace
+  """
+  def largest_filesize_namespace(args) do
+    DB.largest_filesize_namespace(Helpers.db_struct(args))
   end
 end

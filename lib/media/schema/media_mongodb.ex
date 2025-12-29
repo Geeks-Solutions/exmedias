@@ -29,13 +29,14 @@ defmodule Media.MongoDB.Schema do
   @file_metadata_per_type %{
     "video" => ~w(duration)a,
     "podcast" => ~w(duration filename)a,
-    "image" => ~w(size filename metadata)a
+    "image" => ~w(size filename metadata)a,
+    "document" => ~w(size filename)a
   }
   use Ecto.Schema
   import Ecto.Changeset
   alias Media.Helpers
 
-  @fields ~w(title author seo_tag contents_used tags type locked_status private_status files namespace)a
+  @fields ~w(title author seo_tag contents_used tags type locked_status private_status files namespace metadata)a
   @derive {Jason.Encoder, only: @fields}
   schema "media" do
     field(:tags, {:array, :string})
@@ -49,6 +50,7 @@ defmodule Media.MongoDB.Schema do
     field(:private_status, :string, default: "private")
     field(:seo_tag, :string)
     field(:namespace, :string)
+    field(:metadata, :map)
     ## virtual as this will not be stored in the database but will be returned when querying
     ## so that we have a proper mapping with the schema
     field(:number_of_contents, :integer, virtual: true, default: 0)

@@ -26,7 +26,7 @@ defmodule Media.PostgreSQL.Schema do
   alias Media.Helpers
   alias Media.Schema.File
 
-  @fields ~w(title author tags type locked_status private_status seo_tag namespace)a
+  @fields ~w(title author tags type locked_status private_status seo_tag namespace metadata)a
   @derive {Jason.Encoder,
            only: @fields ++ [:id, :number_of_contents, :files, :updated_at, :inserted_at]}
   schema "media" do
@@ -39,7 +39,9 @@ defmodule Media.PostgreSQL.Schema do
     field(:private_status, :string, default: "private")
     field(:seo_tag, :string)
     field(:namespace, :string)
+    field(:metadata, :map)
     field(:number_of_contents, :integer, virtual: true, default: 0)
+    field(:contents_used, {:array, :string}, virtual: true, default: [])
     timestamps()
   end
 
